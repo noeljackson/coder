@@ -24114,3 +24114,31 @@ func (q *sqlQuerier) InsertWorkspaceAgentScripts(ctx context.Context, arg Insert
 	}
 	return items, nil
 }
+
+const countWorkspacesByOwnerID = `-- name: CountWorkspacesByOwnerID :one
+SELECT COUNT(*)::bigint AS count
+FROM workspaces
+WHERE owner_id = $1
+  AND deleted = false
+`
+
+func (q *sqlQuerier) CountWorkspacesByOwnerID(ctx context.Context, ownerID uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countWorkspacesByOwnerID, ownerID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countWorkspacesByOrganizationID = `-- name: CountWorkspacesByOrganizationID :one
+SELECT COUNT(*)::bigint AS count
+FROM workspaces
+WHERE organization_id = $1
+  AND deleted = false
+`
+
+func (q *sqlQuerier) CountWorkspacesByOrganizationID(ctx context.Context, organizationID uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countWorkspacesByOrganizationID, organizationID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}

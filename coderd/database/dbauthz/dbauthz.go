@@ -3897,6 +3897,24 @@ func (q *querier) GetWorkspaceByResourceID(ctx context.Context, resourceID uuid.
 	return fetch(q.log, q.auth, q.db.GetWorkspaceByResourceID)(ctx, resourceID)
 }
 
+// CountWorkspacesByOwnerID counts workspaces for limit enforcement.
+// Uses system authorization since this is an internal operation.
+func (q *querier) CountWorkspacesByOwnerID(ctx context.Context, ownerID uuid.UUID) (int64, error) {
+	if err := q.authorizeContext(ctx, policy.ActionRead, rbac.ResourceSystem); err != nil {
+		return 0, err
+	}
+	return q.db.CountWorkspacesByOwnerID(ctx, ownerID)
+}
+
+// CountWorkspacesByOrganizationID counts workspaces for limit enforcement.
+// Uses system authorization since this is an internal operation.
+func (q *querier) CountWorkspacesByOrganizationID(ctx context.Context, organizationID uuid.UUID) (int64, error) {
+	if err := q.authorizeContext(ctx, policy.ActionRead, rbac.ResourceSystem); err != nil {
+		return 0, err
+	}
+	return q.db.CountWorkspacesByOrganizationID(ctx, organizationID)
+}
+
 func (q *querier) GetWorkspaceByWorkspaceAppID(ctx context.Context, workspaceAppID uuid.UUID) (database.Workspace, error) {
 	return fetch(q.log, q.auth, q.db.GetWorkspaceByWorkspaceAppID)(ctx, workspaceAppID)
 }

@@ -259,6 +259,13 @@ type Options struct {
 	ParseLicenseClaims    func(rawJWT string) (email string, trial bool, err error)
 	AllowWorkspaceRenames bool
 
+	// MaxWorkspacesPerUser limits how many workspaces a single user can create.
+	// 0 means unlimited.
+	MaxWorkspacesPerUser int64
+	// MaxWorkspacesPerOrganization limits total workspaces across all users in an org.
+	// 0 means unlimited.
+	MaxWorkspacesPerOrganization int64
+
 	// NewTicker is used for unit tests to replace "time.NewTicker".
 	NewTicker func(duration time.Duration) (tick <-chan time.Time, done func())
 
