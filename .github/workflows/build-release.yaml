@@ -44,6 +44,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch upstream tags
+        run: |
+          git remote add upstream https://github.com/coder/coder.git || true
+          git fetch upstream --tags --force
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -70,6 +75,7 @@ jobs:
           CGO_ENABLED: 0
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
+          GOPRIVATE: github.com/coder/*
         run: |
           mkdir -p build
           go build \
