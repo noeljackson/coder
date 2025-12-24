@@ -70,21 +70,24 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gettext
-
       - name: Build Go binary
         env:
-          GOFLAGS: "-mod=mod"
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: "0"
           GOPROXY: "https://proxy.golang.org,direct"
-          GOSUMDB: "sum.golang.org"
         run: |
-          go mod download
-          make gen/mark-fresh
-          make -j build/coder_${{ steps.version.outputs.version }}_${{ matrix.os }}_${{ matrix.arch }}
-          cp build/coder_${{ steps.version.outputs.version }}_${{ matrix.os }}_${{ matrix.arch }} build/coder_${{ matrix.os }}_${{ matrix.arch }}
+          mkdir -p build
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Build with version ldflags and appropriate tags
+          go build -o "build/coder_${{ matrix.os }}_${{ matrix.arch }}" \
+            -ldflags "-s -w -X 'github.com/coder/coder/v2/buildinfo.tag=${VERSION}'" \
+            -tags "slim,ts_omit_aws,ts_omit_bird,ts_omit_tap,ts_omit_kube" \
+            ./enterprise/cmd/coder
+
+          echo "Built binary: build/coder_${{ matrix.os }}_${{ matrix.arch }}"
+          ls -la build/
 
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
