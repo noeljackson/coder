@@ -70,12 +70,16 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
 
+      - name: Download Go modules
+        env:
+          GOPROXY: https://proxy.golang.org,direct
+        run: go mod download
+
       - name: Build Go binary
         env:
           CGO_ENABLED: 0
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
-          GOPRIVATE: github.com/coder/*
         run: |
           mkdir -p build
           go build \
