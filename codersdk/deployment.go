@@ -497,6 +497,8 @@ type DeploymentValues struct {
 	UserQuietHoursSchedule          UserQuietHoursScheduleConfig         `json:"user_quiet_hours_schedule,omitempty" typescript:",notnull"`
 	WebTerminalRenderer             serpent.String                       `json:"web_terminal_renderer,omitempty" typescript:",notnull"`
 	AllowWorkspaceRenames           serpent.Bool                         `json:"allow_workspace_renames,omitempty" typescript:",notnull"`
+	MaxWorkspacesPerUser            serpent.Int64                        `json:"max_workspaces_per_user,omitempty" typescript:",notnull"`
+	MaxWorkspacesPerOrganization    serpent.Int64                        `json:"max_workspaces_per_organization,omitempty" typescript:",notnull"`
 	Healthcheck                     HealthcheckConfig                    `json:"healthcheck,omitempty" typescript:",notnull"`
 	CLIUpgradeMessage               serpent.String                       `json:"cli_upgrade_message,omitempty" typescript:",notnull"`
 	TermsOfServiceURL               serpent.String                       `json:"terms_of_service_url,omitempty" typescript:",notnull"`
@@ -2869,6 +2871,24 @@ Write out the current server config as YAML to stdout.`,
 			Default:     "false",
 			Value:       &c.AllowWorkspaceRenames,
 			YAML:        "allowWorkspaceRenames",
+		},
+		{
+			Name:        "Max Workspaces Per User",
+			Description: "Maximum number of workspaces a single user can create. Set to 0 for unlimited.",
+			Flag:        "max-workspaces-per-user",
+			Env:         "CODER_MAX_WORKSPACES_PER_USER",
+			Default:     "0",
+			Value:       &c.MaxWorkspacesPerUser,
+			YAML:        "maxWorkspacesPerUser",
+		},
+		{
+			Name:        "Max Workspaces Per Organization",
+			Description: "Maximum total number of workspaces across all users in the organization. Set to 0 for unlimited.",
+			Flag:        "max-workspaces-per-organization",
+			Env:         "CODER_MAX_WORKSPACES_PER_ORGANIZATION",
+			Default:     "0",
+			Value:       &c.MaxWorkspacesPerOrganization,
+			YAML:        "maxWorkspacesPerOrganization",
 		},
 		// Healthcheck Options
 		{

@@ -570,6 +570,46 @@ func createWorkspace(
 		})
 	}
 
+	// Check workspace limits if configured
+	// Use system context for limit enforcement queries
+	systemCtx := dbauthz.AsSystemRestricted(ctx)
+
+	// Check per-user workspace limit
+	if api.Options.MaxWorkspacesPerUser > 0 {
+		userWorkspaceCount, err := api.Database.CountWorkspacesByOwnerID(systemCtx, owner.ID)
+		if err != nil {
+			return codersdk.Workspace{}, httperror.NewResponseError(http.StatusInternalServerError, codersdk.Response{
+				Message: "Internal error checking workspace limits.",
+				Detail:  err.Error(),
+			})
+		}
+		if userWorkspaceCount >= api.Options.MaxWorkspacesPerUser {
+			return codersdk.Workspace{}, httperror.NewResponseError(http.StatusForbidden, codersdk.Response{
+				Message: fmt.Sprintf("Workspace limit reached. You have %d workspaces, which is the maximum allowed (%d).",
+					userWorkspaceCount, api.Options.MaxWorkspacesPerUser),
+				Detail: "Contact your administrator to increase your workspace limit or delete existing workspaces.",
+			})
+		}
+	}
+
+	// Check per-organization workspace limit
+	if api.Options.MaxWorkspacesPerOrganization > 0 {
+		orgWorkspaceCount, err := api.Database.CountWorkspacesByOrganizationID(systemCtx, template.OrganizationID)
+		if err != nil {
+			return codersdk.Workspace{}, httperror.NewResponseError(http.StatusInternalServerError, codersdk.Response{
+				Message: "Internal error checking organization workspace limits.",
+				Detail:  err.Error(),
+			})
+		}
+		if orgWorkspaceCount >= api.Options.MaxWorkspacesPerOrganization {
+			return codersdk.Workspace{}, httperror.NewResponseError(http.StatusForbidden, codersdk.Response{
+				Message: fmt.Sprintf("Organization workspace limit reached. The organization has %d workspaces, which is the maximum allowed (%d).",
+					orgWorkspaceCount, api.Options.MaxWorkspacesPerOrganization),
+				Detail: "Contact your administrator to increase the organization's workspace limit or delete existing workspaces.",
+			})
+		}
+	}
+
 	dbAutostartSchedule, err := validWorkspaceSchedule(req.AutostartSchedule)
 	if err != nil {
 		return codersdk.Workspace{}, httperror.NewResponseError(http.StatusBadRequest, codersdk.Response{

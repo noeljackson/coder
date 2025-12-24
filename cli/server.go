@@ -675,8 +675,10 @@ func (r *RootCmd) Server(newAPI func(context.Context, *coderd.Options) (*coderd.
 					SSHConfigOptions: configSSHOptions,
 					HostnameSuffix:   vals.WorkspaceHostnameSuffix.String(),
 				},
-				AllowWorkspaceRenames: vals.AllowWorkspaceRenames.Value(),
-				Entitlements:          entitlements.New(),
+				AllowWorkspaceRenames:        vals.AllowWorkspaceRenames.Value(),
+				MaxWorkspacesPerUser:         vals.MaxWorkspacesPerUser.Value(),
+				MaxWorkspacesPerOrganization: vals.MaxWorkspacesPerOrganization.Value(),
+				Entitlements:                 entitlements.New(),
 				NotificationsEnqueuer: notifications.NewNoopEnqueuer(), // Changed further down if notifications enabled.
 			}
 			if httpServers.TLSConfig != nil {

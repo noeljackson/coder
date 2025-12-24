@@ -996,3 +996,17 @@ AND wb.build_number = (
     FROM workspace_builds wb2
     WHERE wb2.workspace_id = w.id
 );
+
+-- name: CountWorkspacesByOwnerID :one
+-- Count non-deleted workspaces owned by a specific user
+SELECT COUNT(*)::bigint AS count
+FROM workspaces
+WHERE owner_id = @owner_id
+  AND deleted = false;
+
+-- name: CountWorkspacesByOrganizationID :one
+-- Count non-deleted workspaces in an organization
+SELECT COUNT(*)::bigint AS count
+FROM workspaces
+WHERE organization_id = @organization_id
+  AND deleted = false;
