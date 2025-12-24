@@ -80,11 +80,11 @@ jobs:
           mkdir -p build
           VERSION="${{ steps.version.outputs.version }}"
 
-          # Build with version ldflags and appropriate tags
+          # Build AGPL (open source) version with version ldflags and appropriate tags
           go build -o "build/coder_${{ matrix.os }}_${{ matrix.arch }}" \
-            -ldflags "-s -w -X 'github.com/coder/coder/v2/buildinfo.tag=${VERSION}'" \
+            -ldflags "-s -w -X 'github.com/coder/coder/v2/buildinfo.tag=${VERSION}' -X 'github.com/coder/coder/v2/buildinfo.agpl=true'" \
             -tags "slim,ts_omit_aws,ts_omit_bird,ts_omit_tap,ts_omit_kube" \
-            ./enterprise/cmd/coder
+            ./cmd/coder
 
           echo "Built binary: build/coder_${{ matrix.os }}_${{ matrix.arch }}"
           ls -la build/
@@ -196,8 +196,8 @@ jobs:
           ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt
           WORKDIR /home/coder
 
-          LABEL org.opencontainers.image.title="Coder (Workspace Limits)"
-          LABEL org.opencontainers.image.description="Coder with workspace limits feature"
+          LABEL org.opencontainers.image.title="Coder AGPL (Workspace Limits)"
+          LABEL org.opencontainers.image.description="Coder AGPL with workspace limits feature"
           LABEL org.opencontainers.image.source="https://github.com/noeljackson/coder"
 
           ENTRYPOINT [ "/opt/coder", "server" ]
