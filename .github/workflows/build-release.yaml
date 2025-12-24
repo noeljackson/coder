@@ -1,0 +1,209 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - feature/workspace-limits
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - feature/workspace-limits
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g., 2.29.1-limits)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: noeljackson/coder
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+            platform: linux/amd64
+          - os: linux
+            arch: arm64
+            platform: linux/arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Get version
+        id: version
+        run: |
+          if [[ "${{ github.event.inputs.version }}" != "" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            # Use base coder version + -limits suffix
+            BASE_VERSION=$(./scripts/version.sh)
+            VERSION="${BASE_VERSION}-limits"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Build Go binary
+        env:
+          CGO_ENABLED: 0
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+        run: |
+          mkdir -p build
+          go build \
+            -ldflags "-s -w -X github.com/coder/coder/v2/buildinfo.tag=${{ steps.version.outputs.version }}" \
+            -o build/coder_${{ matrix.os }}_${{ matrix.arch }} \
+            ./cmd/coder
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coder-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/coder_${{ matrix.os }}_${{ matrix.arch }}
+          retention-days: 1
+
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version
+        id: version
+        run: |
+          if [[ "${{ github.event.inputs.version }}" != "" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            BASE_VERSION=$(./scripts/version.sh)
+            VERSION="${BASE_VERSION}-limits"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building Docker image version: $VERSION"
+
+      - name: Download amd64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: coder-linux-amd64
+          path: build/linux/amd64
+
+      - name: Download arm64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: coder-linux-arm64
+          path: build/linux/arm64
+
+      - name: Prepare binaries
+        run: |
+          chmod +x build/linux/amd64/coder_linux_amd64
+          chmod +x build/linux/arm64/coder_linux_arm64
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/feature/workspace-limits' }}
+            type=sha,prefix=
+
+      - name: Create Dockerfile
+        run: |
+          cat > Dockerfile.multi <<'EOF'
+          FROM alpine:3.22
+
+          RUN apk add --no-cache \
+              curl \
+              wget \
+              bash \
+              git \
+              openssl \
+              openssh-client \
+              tzdata && \
+            addgroup -g 1000 coder && \
+            adduser -D -s /bin/bash -h /home/coder -u 1000 -G coder coder
+
+          # Install Terraform
+          RUN ARCH="$(arch)"; \
+              if [ "${ARCH}" == "x86_64" ]; then ARCH="amd64"; \
+              elif [ "${ARCH}" == "aarch64" ]; then ARCH="arm64"; fi; \
+              wget -O /tmp/terraform.zip "https://releases.hashicorp.com/terraform/1.13.4/terraform_1.13.4_linux_${ARCH}.zip" && \
+              unzip /tmp/terraform.zip -d /usr/local/bin && \
+              rm -f /tmp/terraform.zip && \
+              chmod +x /usr/local/bin/terraform
+
+          ARG TARGETARCH
+          COPY build/linux/${TARGETARCH}/coder_linux_${TARGETARCH} /opt/coder
+
+          RUN chmod +x /opt/coder
+
+          USER 1000:1000
+          ENV HOME=/home/coder
+          ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt
+          WORKDIR /home/coder
+
+          LABEL org.opencontainers.image.title="Coder (Workspace Limits)"
+          LABEL org.opencontainers.image.description="Coder with workspace limits feature"
+          LABEL org.opencontainers.image.source="https://github.com/noeljackson/coder"
+
+          ENTRYPOINT [ "/opt/coder", "server" ]
+          EOF
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.multi
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Print image info
+        run: |
+          echo "Pushed images:"
+          echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n'
