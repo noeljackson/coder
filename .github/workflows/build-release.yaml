@@ -63,7 +63,9 @@ jobs:
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
             # Use base coder version + -codespace suffix
-            BASE_VERSION=$(./scripts/version.sh)
+            # Strip any -devel+xxx suffix to get clean version
+            RAW_VERSION=$(./scripts/version.sh)
+            BASE_VERSION="${RAW_VERSION%%-devel*}"
             VERSION="${BASE_VERSION}-codespace"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -114,7 +116,9 @@ jobs:
           elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            BASE_VERSION=$(./scripts/version.sh)
+            # Strip any -devel+xxx suffix to get clean version
+            RAW_VERSION=$(./scripts/version.sh)
+            BASE_VERSION="${RAW_VERSION%%-devel*}"
             VERSION="${BASE_VERSION}-codespace"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
