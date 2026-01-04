@@ -3,9 +3,10 @@ import { Alert, AlertDetail, AlertTitle } from "components/Alert/Alert";
 import { SidebarIconButton } from "components/FullPageLayout/Sidebar";
 import { Link } from "components/Link/Link";
 import { useSearchParamsKey } from "hooks/useSearchParamsKey";
-import { BlocksIcon, HistoryIcon } from "lucide-react";
+import { BlocksIcon, HistoryIcon, UsersIcon } from "lucide-react";
 import { ProvisionerStatusAlert } from "modules/provisioners/ProvisionerStatusAlert";
 import { AgentRow } from "modules/resources/AgentRow";
+import { CollaboratorsPanel } from "modules/workspaces/WorkspaceCollaborators";
 import { WorkspaceTimings } from "modules/workspaces/WorkspaceTiming/WorkspaceTimings";
 import type { FC } from "react";
 import { useNavigate } from "react-router";
@@ -142,6 +143,15 @@ export const Workspace: FC<WorkspaceProps> = ({
 							<HistoryIcon className="size-icon-sm" />
 							<span className="sr-only">History</span>
 						</SidebarIconButton>
+						<SidebarIconButton
+							isActive={sidebarOption.value === "collaborators"}
+							onClick={() => {
+								setSidebarOption("collaborators");
+							}}
+						>
+							<UsersIcon className="size-icon-sm" />
+							<span className="sr-only">Collaborators</span>
+						</SidebarIconButton>
 					</div>
 
 					{sidebarOption.value === "resources" && (
@@ -154,6 +164,15 @@ export const Workspace: FC<WorkspaceProps> = ({
 					)}
 					{sidebarOption.value === "history" && (
 						<HistorySidebar workspace={workspace} />
+					)}
+					{sidebarOption.value === "collaborators" && (
+						<div className="w-[280px] h-full overflow-y-auto border-solid border-0 border-r border-r-border p-4">
+							<CollaboratorsPanel
+								workspaceId={workspace.id}
+								workspaceName={workspace.name}
+								isOwner={permissions.updateWorkspace}
+							/>
+						</div>
 					)}
 				</div>
 

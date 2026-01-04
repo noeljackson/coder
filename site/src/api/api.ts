@@ -1754,6 +1754,70 @@ class ApiMethods {
 		return resp.data;
 	};
 
+	// External Auth Provider Management (database-stored providers)
+	getExternalAuthProviders = async (): Promise<
+		TypesGen.ExternalAuthProviderConfig[]
+	> => {
+		const resp = await this.axios.get(
+			"/api/v2/deployment/external-auth-providers",
+		);
+		return resp.data;
+	};
+
+	getExternalAuthProviderByID = async (
+		id: string,
+	): Promise<TypesGen.ExternalAuthProviderConfig> => {
+		const resp = await this.axios.get(
+			`/api/v2/deployment/external-auth-providers/${id}`,
+		);
+		return resp.data;
+	};
+
+	createExternalAuthProvider = async (
+		data: TypesGen.CreateExternalAuthProviderRequest,
+	): Promise<TypesGen.ExternalAuthProviderConfig> => {
+		const resp = await this.axios.post(
+			"/api/v2/deployment/external-auth-providers",
+			data,
+		);
+		return resp.data;
+	};
+
+	updateExternalAuthProvider = async (
+		id: string,
+		data: TypesGen.UpdateExternalAuthProviderRequest,
+	): Promise<TypesGen.ExternalAuthProviderConfig> => {
+		const resp = await this.axios.patch(
+			`/api/v2/deployment/external-auth-providers/${id}`,
+			data,
+		);
+		return resp.data;
+	};
+
+	deleteExternalAuthProvider = async (id: string): Promise<void> => {
+		await this.axios.delete(`/api/v2/deployment/external-auth-providers/${id}`);
+	};
+
+	initiateGitHubAppManifest = async (
+		data: TypesGen.GitHubAppManifestRequest,
+	): Promise<TypesGen.GitHubAppManifestResponse> => {
+		const resp = await this.axios.post(
+			"/api/v2/deployment/external-auth-providers/github/manifest",
+			data,
+		);
+		return resp.data;
+	};
+
+	completeGitHubAppManifest = async (
+		data: TypesGen.GitHubAppManifestCallbackRequest,
+	): Promise<TypesGen.ExternalAuthProviderConfig> => {
+		const resp = await this.axios.post(
+			"/api/v2/deployment/external-auth-providers/github/callback",
+			data,
+		);
+		return resp.data;
+	};
+
 	getOAuth2GitHubDeviceFlowCallback = async (
 		code: string,
 		state: string,
@@ -1940,6 +2004,105 @@ class ApiMethods {
 		data: TypesGen.UpdateWorkspaceACL,
 	): Promise<void> => {
 		await this.axios.patch(`/api/v2/workspaces/${workspaceId}/acl`, data);
+	};
+
+	// Workspace Invitations
+	createWorkspaceInvitation = async (
+		workspaceId: string,
+		data: TypesGen.CreateWorkspaceInvitationRequest,
+	): Promise<TypesGen.WorkspaceInvitation> => {
+		const response = await this.axios.post(
+			`/api/v2/workspaces/${workspaceId}/invitations`,
+			data,
+		);
+		return response.data;
+	};
+
+	getWorkspaceInvitations = async (
+		workspaceId: string,
+	): Promise<TypesGen.WorkspaceInvitation[]> => {
+		const response = await this.axios.get(
+			`/api/v2/workspaces/${workspaceId}/invitations`,
+		);
+		return response.data;
+	};
+
+	deleteWorkspaceInvitation = async (
+		workspaceId: string,
+		invitationId: string,
+	): Promise<void> => {
+		await this.axios.delete(
+			`/api/v2/workspaces/${workspaceId}/invitations/${invitationId}`,
+		);
+	};
+
+	acceptWorkspaceInvitation = async (
+		token: string,
+	): Promise<TypesGen.WorkspaceCollaborator> => {
+		const response = await this.axios.post(
+			`/api/v2/invitations/${token}/accept`,
+		);
+		return response.data;
+	};
+
+	declineWorkspaceInvitation = async (token: string): Promise<void> => {
+		await this.axios.post(`/api/v2/invitations/${token}/decline`);
+	};
+
+	getWorkspaceInvitationByToken = async (
+		token: string,
+	): Promise<TypesGen.WorkspaceInvitation> => {
+		const response = await this.axios.get(`/api/v2/invitations/${token}`);
+		return response.data;
+	};
+
+	// Workspace Collaborators
+	getWorkspaceCollaborators = async (
+		workspaceId: string,
+	): Promise<TypesGen.WorkspaceCollaborator[]> => {
+		const response = await this.axios.get(
+			`/api/v2/workspaces/${workspaceId}/collaborators`,
+		);
+		return response.data;
+	};
+
+	updateWorkspaceCollaborator = async (
+		workspaceId: string,
+		collaboratorId: string,
+		data: TypesGen.UpdateWorkspaceCollaboratorRequest,
+	): Promise<TypesGen.WorkspaceCollaborator> => {
+		const response = await this.axios.patch(
+			`/api/v2/workspaces/${workspaceId}/collaborators/${collaboratorId}`,
+			data,
+		);
+		return response.data;
+	};
+
+	deleteWorkspaceCollaborator = async (
+		workspaceId: string,
+		collaboratorId: string,
+	): Promise<void> => {
+		await this.axios.delete(
+			`/api/v2/workspaces/${workspaceId}/collaborators/${collaboratorId}`,
+		);
+	};
+
+	getMyWorkspaceCollaborations = async (): Promise<
+		TypesGen.WorkspaceCollaborator[]
+	> => {
+		const response = await this.axios.get(
+			"/api/v2/users/me/workspace-collaborations",
+		);
+		return response.data;
+	};
+
+	getMyPendingInvitations = async (): Promise<
+		TypesGen.WorkspaceInvitation[]
+	> => {
+		const response = await this.axios.get(
+			"/api/v2/users/me/workspace-invitations",
+		);
+		return response.data;
 	};
 
 	getApplicationsHost = async (): Promise<TypesGen.AppHostResponse> => {

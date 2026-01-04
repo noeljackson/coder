@@ -16,4 +16,7 @@ const (
 	CheckTelemetryLockEventTypeConstraint        CheckConstraint = "telemetry_lock_event_type_constraint"         // telemetry_locks
 	CheckValidationMonotonicOrder                CheckConstraint = "validation_monotonic_order"                   // template_version_parameters
 	CheckUsageEventTypeCheck                     CheckConstraint = "usage_event_type_check"                       // usage_events
+	CheckWorkspaceCollaboratorsAccessLevelCheck  CheckConstraint = "workspace_collaborators_access_level_check"   // workspace_collaborators
+	CheckWorkspaceInvitationsAccessLevelCheck    CheckConstraint = "workspace_invitations_access_level_check"     // workspace_invitations
+	CheckWorkspaceInvitationsStatusCheck         CheckConstraint = "workspace_invitations_status_check"           // workspace_invitations
 )

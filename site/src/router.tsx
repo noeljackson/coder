@@ -133,6 +133,11 @@ const ExternalAuthSettingsPage = lazy(
 			"./pages/DeploymentSettingsPage/ExternalAuthSettingsPage/ExternalAuthSettingsPage"
 		),
 );
+const GitHubAppCallbackPage = lazy(() =>
+	import(
+		"./pages/DeploymentSettingsPage/ExternalAuthSettingsPage/GitHubAppCallbackPage"
+	).then((m) => ({ default: m.GitHubAppCallbackPage })),
+);
 const OAuth2AppsSettingsPage = lazy(
 	() =>
 		import(
@@ -338,6 +343,9 @@ const ProvisionerJobsPage = lazy(
 );
 const TasksPage = lazy(() => import("./pages/TasksPage/TasksPage"));
 const TaskPage = lazy(() => import("./pages/TaskPage/TaskPage"));
+const InvitationPage = lazy(
+	() => import("./pages/InvitationPage/InvitationPage"),
+);
 const AIBridgeLayout = lazy(
 	() => import("./pages/AIBridgePage/AIBridgeLayout"),
 );
@@ -497,6 +505,10 @@ export const router = createBrowserRouter(
 								path="external-auth"
 								element={<ExternalAuthSettingsPage />}
 							/>
+							<Route
+								path="external-auth/github/callback"
+								element={<GitHubAppCallbackPage />}
+							/>
 
 							<Route
 								path="notifications"
@@ -591,6 +603,8 @@ export const router = createBrowserRouter(
 					</Route>
 
 					<Route path="/install" element={<CliInstallPage />} />
+
+					<Route path="/invitations/:token" element={<InvitationPage />} />
 
 					{/* Using path="*"" means "match anything", so this route
               acts like a catch-all for URLs that we don't have explicit

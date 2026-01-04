@@ -207,3 +207,179 @@ func (c *Client) ListExternalAuths(ctx context.Context) (ListUserExternalAuthRes
 	var extAuth ListUserExternalAuthResponse
 	return extAuth, json.NewDecoder(res.Body).Decode(&extAuth)
 }
+
+// ExternalAuthProviderConfig is a database-stored external auth provider configuration.
+// This is separate from the file-based configuration and supports runtime management.
+type ExternalAuthProviderConfig struct {
+	ID          string    `json:"id"`
+	Type        string    `json:"type"`
+	ClientID    string    `json:"client_id"`
+	DisplayName string    `json:"display_name,omitempty"`
+	DisplayIcon string    `json:"display_icon,omitempty"`
+	AuthURL     string    `json:"auth_url,omitempty"`
+	TokenURL    string    `json:"token_url,omitempty"`
+	ValidateURL string    `json:"validate_url,omitempty"`
+	Scopes      []string  `json:"scopes,omitempty"`
+	NoRefresh   bool      `json:"no_refresh"`
+	DeviceFlow  bool      `json:"device_flow"`
+	Regex       string    `json:"regex,omitempty"`
+	CreatedAt   time.Time `json:"created_at" format:"date-time"`
+	UpdatedAt   time.Time `json:"updated_at" format:"date-time"`
+
+	// GitHub App specific fields
+	AppInstallURL      string `json:"app_install_url,omitempty"`
+	AppInstallationsURL string `json:"app_installations_url,omitempty"`
+	GithubAppID        int64  `json:"github_app_id,omitempty"`
+}
+
+// CreateExternalAuthProviderRequest is used to create a new external auth provider.
+type CreateExternalAuthProviderRequest struct {
+	ID           string   `json:"id"`
+	Type         string   `json:"type"`
+	ClientID     string   `json:"client_id"`
+	ClientSecret string   `json:"client_secret"`
+	DisplayName  string   `json:"display_name,omitempty"`
+	DisplayIcon  string   `json:"display_icon,omitempty"`
+	AuthURL      string   `json:"auth_url,omitempty"`
+	TokenURL     string   `json:"token_url,omitempty"`
+	ValidateURL  string   `json:"validate_url,omitempty"`
+	Scopes       []string `json:"scopes,omitempty"`
+	NoRefresh    bool     `json:"no_refresh"`
+	DeviceFlow   bool     `json:"device_flow"`
+	Regex        string   `json:"regex,omitempty"`
+
+	// GitHub App specific fields
+	AppInstallURL         string `json:"app_install_url,omitempty"`
+	AppInstallationsURL   string `json:"app_installations_url,omitempty"`
+	GithubAppID           int64  `json:"github_app_id,omitempty"`
+	GithubAppWebhookSecret string `json:"github_app_webhook_secret,omitempty"`
+	GithubAppPrivateKey   string `json:"github_app_private_key,omitempty"`
+}
+
+// UpdateExternalAuthProviderRequest is used to update an external auth provider.
+type UpdateExternalAuthProviderRequest struct {
+	DisplayName *string  `json:"display_name,omitempty"`
+	DisplayIcon *string  `json:"display_icon,omitempty"`
+	Scopes      []string `json:"scopes,omitempty"`
+	NoRefresh   *bool    `json:"no_refresh,omitempty"`
+	DeviceFlow  *bool    `json:"device_flow,omitempty"`
+	Regex       *string  `json:"regex,omitempty"`
+}
+
+// GitHubAppManifestRequest is used to initiate the GitHub App manifest flow.
+type GitHubAppManifestRequest struct {
+	// Owner is the organization or user to create the GitHub App for.
+	// If empty, creates a personal app.
+	Owner       string `json:"owner,omitempty"`
+	RedirectURI string `json:"redirect_uri"`
+}
+
+// GitHubAppManifestResponse contains the URL to redirect the user to GitHub.
+type GitHubAppManifestResponse struct {
+	// URL is the GitHub URL to redirect the user to for app creation.
+	URL   string `json:"url"`
+	State string `json:"state"`
+}
+
+// GitHubAppManifestCallbackRequest is the callback from GitHub after app creation.
+type GitHubAppManifestCallbackRequest struct {
+	Code  string `json:"code"`
+	State string `json:"state"`
+}
+
+// GetExternalAuthProviders returns all database-stored external auth providers.
+func (c *Client) GetExternalAuthProviders(ctx context.Context) ([]ExternalAuthProviderConfig, error) {
+	res, err := c.Request(ctx, http.MethodGet, "/api/v2/deployment/external-auth-providers", nil)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return nil, ReadBodyAsError(res)
+	}
+	var providers []ExternalAuthProviderConfig
+	return providers, json.NewDecoder(res.Body).Decode(&providers)
+}
+
+// GetExternalAuthProvider returns a database-stored external auth provider by ID.
+func (c *Client) GetExternalAuthProvider(ctx context.Context, id string) (ExternalAuthProviderConfig, error) {
+	res, err := c.Request(ctx, http.MethodGet, fmt.Sprintf("/api/v2/deployment/external-auth-providers/%s", id), nil)
+	if err != nil {
+		return ExternalAuthProviderConfig{}, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return ExternalAuthProviderConfig{}, ReadBodyAsError(res)
+	}
+	var provider ExternalAuthProviderConfig
+	return provider, json.NewDecoder(res.Body).Decode(&provider)
+}
+
+// CreateExternalAuthProvider creates a new external auth provider.
+func (c *Client) CreateExternalAuthProvider(ctx context.Context, req CreateExternalAuthProviderRequest) (ExternalAuthProviderConfig, error) {
+	res, err := c.Request(ctx, http.MethodPost, "/api/v2/deployment/external-auth-providers", req)
+	if err != nil {
+		return ExternalAuthProviderConfig{}, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusCreated {
+		return ExternalAuthProviderConfig{}, ReadBodyAsError(res)
+	}
+	var provider ExternalAuthProviderConfig
+	return provider, json.NewDecoder(res.Body).Decode(&provider)
+}
+
+// UpdateExternalAuthProvider updates an external auth provider.
+func (c *Client) UpdateExternalAuthProvider(ctx context.Context, id string, req UpdateExternalAuthProviderRequest) (ExternalAuthProviderConfig, error) {
+	res, err := c.Request(ctx, http.MethodPatch, fmt.Sprintf("/api/v2/deployment/external-auth-providers/%s", id), req)
+	if err != nil {
+		return ExternalAuthProviderConfig{}, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return ExternalAuthProviderConfig{}, ReadBodyAsError(res)
+	}
+	var provider ExternalAuthProviderConfig
+	return provider, json.NewDecoder(res.Body).Decode(&provider)
+}
+
+// DeleteExternalAuthProvider deletes an external auth provider.
+func (c *Client) DeleteExternalAuthProvider(ctx context.Context, id string) error {
+	res, err := c.Request(ctx, http.MethodDelete, fmt.Sprintf("/api/v2/deployment/external-auth-providers/%s", id), nil)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusNoContent {
+		return ReadBodyAsError(res)
+	}
+	return nil
+}
+
+// InitiateGitHubAppManifest initiates the GitHub App manifest flow.
+func (c *Client) InitiateGitHubAppManifest(ctx context.Context, req GitHubAppManifestRequest) (GitHubAppManifestResponse, error) {
+	res, err := c.Request(ctx, http.MethodPost, "/api/v2/deployment/external-auth-providers/github/manifest", req)
+	if err != nil {
+		return GitHubAppManifestResponse{}, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return GitHubAppManifestResponse{}, ReadBodyAsError(res)
+	}
+	var resp GitHubAppManifestResponse
+	return resp, json.NewDecoder(res.Body).Decode(&resp)
+}
+
+// CompleteGitHubAppManifest completes the GitHub App manifest flow after the callback.
+func (c *Client) CompleteGitHubAppManifest(ctx context.Context, req GitHubAppManifestCallbackRequest) (ExternalAuthProviderConfig, error) {
+	res, err := c.Request(ctx, http.MethodPost, "/api/v2/deployment/external-auth-providers/github/callback", req)
+	if err != nil {
+		return ExternalAuthProviderConfig{}, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusCreated {
+		return ExternalAuthProviderConfig{}, ReadBodyAsError(res)
+	}
+	var provider ExternalAuthProviderConfig
+	return provider, json.NewDecoder(res.Body).Decode(&provider)
+}

@@ -1,0 +1,39 @@
+-- Workspace invitations for email-based collaboration
+CREATE TABLE workspace_invitations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    inviter_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    access_level TEXT NOT NULL DEFAULT 'readonly' CHECK (access_level IN ('readonly', 'use', 'admin')),
+    token TEXT UNIQUE NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'expired', 'canceled')),
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    responded_at TIMESTAMPTZ
+);
+
+-- Index for looking up invitations by workspace
+CREATE INDEX idx_workspace_invitations_workspace_id ON workspace_invitations(workspace_id);
+
+-- Index for looking up invitations by email (for login flow)
+CREATE INDEX idx_workspace_invitations_email ON workspace_invitations(email);
+
+-- Index for looking up invitations by token (for accept/decline)
+CREATE INDEX idx_workspace_invitations_token ON workspace_invitations(token);
+
+-- Workspace collaborators who have accepted invitations
+CREATE TABLE workspace_collaborators (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    access_level TEXT NOT NULL DEFAULT 'readonly' CHECK (access_level IN ('readonly', 'use', 'admin')),
+    invited_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(workspace_id, user_id)
+);
+
+-- Index for looking up collaborators by workspace
+CREATE INDEX idx_workspace_collaborators_workspace_id ON workspace_collaborators(workspace_id);
+
+-- Index for looking up collaborators by user
+CREATE INDEX idx_workspace_collaborators_user_id ON workspace_collaborators(user_id);

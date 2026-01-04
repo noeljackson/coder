@@ -1118,6 +1118,34 @@ export interface ConvertLoginRequest {
 	readonly password: string;
 }
 
+// From codersdk/externalauth.go
+/**
+ * CreateExternalAuthProviderRequest is used to create a new external auth provider.
+ */
+export interface CreateExternalAuthProviderRequest {
+	readonly id: string;
+	readonly type: string;
+	readonly client_id: string;
+	readonly client_secret: string;
+	readonly display_name?: string;
+	readonly display_icon?: string;
+	readonly auth_url?: string;
+	readonly token_url?: string;
+	readonly validate_url?: string;
+	readonly scopes?: readonly string[];
+	readonly no_refresh: boolean;
+	readonly device_flow: boolean;
+	readonly regex?: string;
+	/**
+	 * GitHub App specific fields
+	 */
+	readonly app_install_url?: string;
+	readonly app_installations_url?: string;
+	readonly github_app_id?: number;
+	readonly github_app_webhook_secret?: string;
+	readonly github_app_private_key?: string;
+}
+
 // From codersdk/users.go
 export interface CreateFirstUserRequest {
 	readonly email: string;
@@ -1425,6 +1453,15 @@ export interface CreateWorkspaceBuildRequest {
 	 * Reason sets the reason for the workspace build.
 	 */
 	readonly reason?: CreateWorkspaceBuildReason;
+}
+
+// From codersdk/workspaceinvitations.go
+/**
+ * CreateWorkspaceInvitationRequest is the request body for creating a workspace invitation.
+ */
+export interface CreateWorkspaceInvitationRequest {
+	readonly email: string;
+	readonly access_level: WorkspaceAccessLevel;
 }
 
 // From codersdk/workspaceproxy.go
@@ -1764,6 +1801,8 @@ export interface DeploymentValues {
 	readonly user_quiet_hours_schedule?: UserQuietHoursScheduleConfig;
 	readonly web_terminal_renderer?: string;
 	readonly allow_workspace_renames?: boolean;
+	readonly max_workspaces_per_user?: number;
+	readonly max_workspaces_per_organization?: number;
 	readonly healthcheck?: HealthcheckConfig;
 	readonly retention?: RetentionConfig;
 	readonly cli_upgrade_message?: string;
@@ -2046,6 +2085,34 @@ export interface ExternalAuthLinkProvider {
 }
 
 // From codersdk/externalauth.go
+/**
+ * ExternalAuthProviderConfig is a database-stored external auth provider configuration.
+ * This is separate from the file-based configuration and supports runtime management.
+ */
+export interface ExternalAuthProviderConfig {
+	readonly id: string;
+	readonly type: string;
+	readonly client_id: string;
+	readonly display_name?: string;
+	readonly display_icon?: string;
+	readonly auth_url?: string;
+	readonly token_url?: string;
+	readonly validate_url?: string;
+	readonly scopes?: readonly string[];
+	readonly no_refresh: boolean;
+	readonly device_flow: boolean;
+	readonly regex?: string;
+	readonly created_at: string;
+	readonly updated_at: string;
+	/**
+	 * GitHub App specific fields
+	 */
+	readonly app_install_url?: string;
+	readonly app_installations_url?: string;
+	readonly github_app_id?: number;
+}
+
+// From codersdk/externalauth.go
 export interface ExternalAuthUser {
 	readonly id: number;
 	readonly login: string;
@@ -2186,6 +2253,40 @@ export interface GetUserStatusCountsResponse {
 export interface GetUsersResponse {
 	readonly users: readonly User[];
 	readonly count: number;
+}
+
+// From codersdk/externalauth.go
+/**
+ * GitHubAppManifestCallbackRequest is the callback from GitHub after app creation.
+ */
+export interface GitHubAppManifestCallbackRequest {
+	readonly code: string;
+	readonly state: string;
+}
+
+// From codersdk/externalauth.go
+/**
+ * GitHubAppManifestRequest is used to initiate the GitHub App manifest flow.
+ */
+export interface GitHubAppManifestRequest {
+	/**
+	 * Owner is the organization or user to create the GitHub App for.
+	 * If empty, creates a personal app.
+	 */
+	readonly owner?: string;
+	readonly redirect_uri: string;
+}
+
+// From codersdk/externalauth.go
+/**
+ * GitHubAppManifestResponse contains the URL to redirect the user to GitHub.
+ */
+export interface GitHubAppManifestResponse {
+	/**
+	 * URL is the GitHub URL to redirect the user to for app creation.
+	 */
+	readonly url: string;
+	readonly state: string;
 }
 
 // From codersdk/gitsshkey.go
@@ -5387,6 +5488,19 @@ export interface UpdateCheckResponse {
 	readonly url: string;
 }
 
+// From codersdk/externalauth.go
+/**
+ * UpdateExternalAuthProviderRequest is used to update an external auth provider.
+ */
+export interface UpdateExternalAuthProviderRequest {
+	readonly display_name?: string;
+	readonly display_icon?: string;
+	readonly scopes?: readonly string[];
+	readonly no_refresh?: boolean;
+	readonly device_flow?: boolean;
+	readonly regex?: string;
+}
+
 // From healthsdk/healthsdk.go
 export interface UpdateHealthSettings {
 	readonly dismissed_healthchecks: readonly HealthSection[];
@@ -5605,6 +5719,14 @@ export interface UpdateWorkspaceAutostartRequest {
 	 * on weekdays (Mon-Fri). `CRON_TZ` defaults to UTC if not present.
 	 */
 	readonly schedule?: string;
+}
+
+// From codersdk/workspaceinvitations.go
+/**
+ * UpdateWorkspaceCollaboratorRequest is the request body for updating a collaborator's access level.
+ */
+export interface UpdateWorkspaceCollaboratorRequest {
+	readonly access_level: WorkspaceAccessLevel;
 }
 
 // From codersdk/workspaces.go
@@ -5975,6 +6097,15 @@ export interface WorkspaceACL {
 	readonly users: readonly WorkspaceUser[];
 	readonly group: readonly WorkspaceGroup[];
 }
+
+// From codersdk/workspaceinvitations.go
+export type WorkspaceAccessLevel = "admin" | "readonly" | "use";
+
+export const WorkspaceAccessLevels: WorkspaceAccessLevel[] = [
+	"admin",
+	"readonly",
+	"use",
+];
 
 // From codersdk/workspaceagents.go
 export interface WorkspaceAgent {
@@ -6520,6 +6651,25 @@ export interface WorkspaceBuildsRequest extends Pagination {
 	readonly since?: string;
 }
 
+// From codersdk/workspaceinvitations.go
+/**
+ * WorkspaceCollaborator represents a user with access to a workspace.
+ */
+export interface WorkspaceCollaborator {
+	readonly id: string;
+	readonly workspace_id: string;
+	readonly user_id: string;
+	readonly access_level: WorkspaceAccessLevel;
+	readonly invited_by?: string;
+	readonly created_at: string;
+	/**
+	 * Populated fields
+	 */
+	readonly username?: string;
+	readonly email?: string;
+	readonly avatar_url?: string;
+}
+
 // From codersdk/deployment.go
 export interface WorkspaceConnectionLatencyMS {
 	readonly P50: number;
@@ -6556,6 +6706,44 @@ export interface WorkspaceHealth {
 	readonly healthy: boolean; // Healthy is true if the workspace is healthy.
 	readonly failing_agents: readonly string[]; // FailingAgents lists the IDs of the agents that are failing, if any.
 }
+
+// From codersdk/workspaceinvitations.go
+/**
+ * WorkspaceInvitation represents an invitation to collaborate on a workspace.
+ */
+export interface WorkspaceInvitation {
+	readonly id: string;
+	readonly workspace_id: string;
+	readonly inviter_id: string;
+	readonly email: string;
+	readonly access_level: WorkspaceAccessLevel;
+	readonly token?: string; // Only shown on creation
+	readonly status: WorkspaceInvitationStatus;
+	readonly expires_at: string;
+	readonly created_at: string;
+	readonly responded_at?: string;
+	/**
+	 * Populated fields
+	 */
+	readonly inviter_username?: string;
+	readonly workspace_name?: string;
+}
+
+// From codersdk/workspaceinvitations.go
+export type WorkspaceInvitationStatus =
+	| "accepted"
+	| "canceled"
+	| "declined"
+	| "expired"
+	| "pending";
+
+export const WorkspaceInvitationStatuses: WorkspaceInvitationStatus[] = [
+	"accepted",
+	"canceled",
+	"declined",
+	"expired",
+	"pending",
+];
 
 // From codersdk/workspaces.go
 export interface WorkspaceOptions {

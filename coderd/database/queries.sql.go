@@ -3041,6 +3041,350 @@ func (q *sqlQuerier) UpdateExternalAuthLinkRefreshToken(ctx context.Context, arg
 	return err
 }
 
+const cleanupExpiredManifestStates = `-- name: CleanupExpiredManifestStates :exec
+DELETE FROM external_auth_manifest_states
+WHERE expires_at < NOW()
+`
+
+func (q *sqlQuerier) CleanupExpiredManifestStates(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, cleanupExpiredManifestStates)
+	return err
+}
+
+const deleteExternalAuthManifestState = `-- name: DeleteExternalAuthManifestState :exec
+DELETE FROM external_auth_manifest_states
+WHERE state = $1
+`
+
+func (q *sqlQuerier) DeleteExternalAuthManifestState(ctx context.Context, state string) error {
+	_, err := q.db.ExecContext(ctx, deleteExternalAuthManifestState, state)
+	return err
+}
+
+const deleteExternalAuthProvider = `-- name: DeleteExternalAuthProvider :exec
+DELETE FROM external_auth_providers
+WHERE id = $1
+`
+
+func (q *sqlQuerier) DeleteExternalAuthProvider(ctx context.Context, id string) error {
+	_, err := q.db.ExecContext(ctx, deleteExternalAuthProvider, id)
+	return err
+}
+
+const getExternalAuthManifestState = `-- name: GetExternalAuthManifestState :one
+SELECT state, redirect_uri, created_at, expires_at FROM external_auth_manifest_states
+WHERE state = $1 AND expires_at > NOW()
+`
+
+func (q *sqlQuerier) GetExternalAuthManifestState(ctx context.Context, state string) (DBExternalAuthManifestState, error) {
+	row := q.db.QueryRowContext(ctx, getExternalAuthManifestState, state)
+	var i DBExternalAuthManifestState
+	err := row.Scan(
+		&i.State,
+		&i.RedirectUri,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const getExternalAuthProviderByID = `-- name: GetExternalAuthProviderByID :one
+SELECT id, type, client_id, client_secret_encrypted, client_secret_key_id, display_name, display_icon, auth_url, token_url, validate_url, device_code_url, scopes, extra_token_keys, no_refresh, device_flow, regex, app_install_url, app_installations_url, github_app_id, github_app_webhook_secret_encrypted, github_app_webhook_secret_key_id, github_app_private_key_encrypted, github_app_private_key_key_id, created_at, updated_at FROM external_auth_providers
+WHERE id = $1
+`
+
+func (q *sqlQuerier) GetExternalAuthProviderByID(ctx context.Context, id string) (DBExternalAuthProvider, error) {
+	row := q.db.QueryRowContext(ctx, getExternalAuthProviderByID, id)
+	var i DBExternalAuthProvider
+	err := row.Scan(
+		&i.ID,
+		&i.Type,
+		&i.ClientID,
+		&i.ClientSecretEncrypted,
+		&i.ClientSecretKeyID,
+		&i.DisplayName,
+		&i.DisplayIcon,
+		&i.AuthUrl,
+		&i.TokenUrl,
+		&i.ValidateUrl,
+		&i.DeviceCodeUrl,
+		pq.Array(&i.Scopes),
+		pq.Array(&i.ExtraTokenKeys),
+		&i.NoRefresh,
+		&i.DeviceFlow,
+		&i.Regex,
+		&i.AppInstallUrl,
+		&i.AppInstallationsUrl,
+		&i.GithubAppID,
+		&i.GithubAppWebhookSecretEncrypted,
+		&i.GithubAppWebhookSecretKeyID,
+		&i.GithubAppPrivateKeyEncrypted,
+		&i.GithubAppPrivateKeyKeyID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getExternalAuthProviders = `-- name: GetExternalAuthProviders :many
+SELECT id, type, client_id, client_secret_encrypted, client_secret_key_id, display_name, display_icon, auth_url, token_url, validate_url, device_code_url, scopes, extra_token_keys, no_refresh, device_flow, regex, app_install_url, app_installations_url, github_app_id, github_app_webhook_secret_encrypted, github_app_webhook_secret_key_id, github_app_private_key_encrypted, github_app_private_key_key_id, created_at, updated_at FROM external_auth_providers
+ORDER BY created_at ASC
+`
+
+func (q *sqlQuerier) GetExternalAuthProviders(ctx context.Context) ([]DBExternalAuthProvider, error) {
+	rows, err := q.db.QueryContext(ctx, getExternalAuthProviders)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DBExternalAuthProvider
+	for rows.Next() {
+		var i DBExternalAuthProvider
+		if err := rows.Scan(
+			&i.ID,
+			&i.Type,
+			&i.ClientID,
+			&i.ClientSecretEncrypted,
+			&i.ClientSecretKeyID,
+			&i.DisplayName,
+			&i.DisplayIcon,
+			&i.AuthUrl,
+			&i.TokenUrl,
+			&i.ValidateUrl,
+			&i.DeviceCodeUrl,
+			pq.Array(&i.Scopes),
+			pq.Array(&i.ExtraTokenKeys),
+			&i.NoRefresh,
+			&i.DeviceFlow,
+			&i.Regex,
+			&i.AppInstallUrl,
+			&i.AppInstallationsUrl,
+			&i.GithubAppID,
+			&i.GithubAppWebhookSecretEncrypted,
+			&i.GithubAppWebhookSecretKeyID,
+			&i.GithubAppPrivateKeyEncrypted,
+			&i.GithubAppPrivateKeyKeyID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const insertExternalAuthManifestState = `-- name: InsertExternalAuthManifestState :one
+INSERT INTO external_auth_manifest_states (state, redirect_uri, expires_at)
+VALUES ($1, $2, NOW() + INTERVAL '10 minutes')
+RETURNING state, redirect_uri, created_at, expires_at
+`
+
+type InsertExternalAuthManifestStateParams struct {
+	State       string `db:"state" json:"state"`
+	RedirectUri string `db:"redirect_uri" json:"redirect_uri"`
+}
+
+// Manifest state queries
+func (q *sqlQuerier) InsertExternalAuthManifestState(ctx context.Context, arg InsertExternalAuthManifestStateParams) (DBExternalAuthManifestState, error) {
+	row := q.db.QueryRowContext(ctx, insertExternalAuthManifestState, arg.State, arg.RedirectUri)
+	var i DBExternalAuthManifestState
+	err := row.Scan(
+		&i.State,
+		&i.RedirectUri,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const insertExternalAuthProvider = `-- name: InsertExternalAuthProvider :one
+INSERT INTO external_auth_providers (
+    id,
+    type,
+    client_id,
+    client_secret_encrypted,
+    client_secret_key_id,
+    display_name,
+    display_icon,
+    auth_url,
+    token_url,
+    validate_url,
+    device_code_url,
+    scopes,
+    extra_token_keys,
+    no_refresh,
+    device_flow,
+    regex,
+    app_install_url,
+    app_installations_url,
+    github_app_id,
+    github_app_webhook_secret_encrypted,
+    github_app_webhook_secret_key_id,
+    github_app_private_key_encrypted,
+    github_app_private_key_key_id,
+    created_at,
+    updated_at
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+    $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+    $21, $22, $23, NOW(), NOW()
+) RETURNING id, type, client_id, client_secret_encrypted, client_secret_key_id, display_name, display_icon, auth_url, token_url, validate_url, device_code_url, scopes, extra_token_keys, no_refresh, device_flow, regex, app_install_url, app_installations_url, github_app_id, github_app_webhook_secret_encrypted, github_app_webhook_secret_key_id, github_app_private_key_encrypted, github_app_private_key_key_id, created_at, updated_at
+`
+
+type InsertExternalAuthProviderParams struct {
+	ID                              string         `db:"id" json:"id"`
+	Type                            string         `db:"type" json:"type"`
+	ClientID                        string         `db:"client_id" json:"client_id"`
+	ClientSecretEncrypted           []byte         `db:"client_secret_encrypted" json:"client_secret_encrypted"`
+	ClientSecretKeyID               sql.NullString `db:"client_secret_key_id" json:"client_secret_key_id"`
+	DisplayName                     sql.NullString `db:"display_name" json:"display_name"`
+	DisplayIcon                     sql.NullString `db:"display_icon" json:"display_icon"`
+	AuthUrl                         sql.NullString `db:"auth_url" json:"auth_url"`
+	TokenUrl                        sql.NullString `db:"token_url" json:"token_url"`
+	ValidateUrl                     sql.NullString `db:"validate_url" json:"validate_url"`
+	DeviceCodeUrl                   sql.NullString `db:"device_code_url" json:"device_code_url"`
+	Scopes                          []string       `db:"scopes" json:"scopes"`
+	ExtraTokenKeys                  []string       `db:"extra_token_keys" json:"extra_token_keys"`
+	NoRefresh                       bool           `db:"no_refresh" json:"no_refresh"`
+	DeviceFlow                      bool           `db:"device_flow" json:"device_flow"`
+	Regex                           sql.NullString `db:"regex" json:"regex"`
+	AppInstallUrl                   sql.NullString `db:"app_install_url" json:"app_install_url"`
+	AppInstallationsUrl             sql.NullString `db:"app_installations_url" json:"app_installations_url"`
+	GithubAppID                     sql.NullInt64  `db:"github_app_id" json:"github_app_id"`
+	GithubAppWebhookSecretEncrypted []byte         `db:"github_app_webhook_secret_encrypted" json:"github_app_webhook_secret_encrypted"`
+	GithubAppWebhookSecretKeyID     sql.NullString `db:"github_app_webhook_secret_key_id" json:"github_app_webhook_secret_key_id"`
+	GithubAppPrivateKeyEncrypted    []byte         `db:"github_app_private_key_encrypted" json:"github_app_private_key_encrypted"`
+	GithubAppPrivateKeyKeyID        sql.NullString `db:"github_app_private_key_key_id" json:"github_app_private_key_key_id"`
+}
+
+func (q *sqlQuerier) InsertExternalAuthProvider(ctx context.Context, arg InsertExternalAuthProviderParams) (DBExternalAuthProvider, error) {
+	row := q.db.QueryRowContext(ctx, insertExternalAuthProvider,
+		arg.ID,
+		arg.Type,
+		arg.ClientID,
+		arg.ClientSecretEncrypted,
+		arg.ClientSecretKeyID,
+		arg.DisplayName,
+		arg.DisplayIcon,
+		arg.AuthUrl,
+		arg.TokenUrl,
+		arg.ValidateUrl,
+		arg.DeviceCodeUrl,
+		pq.Array(arg.Scopes),
+		pq.Array(arg.ExtraTokenKeys),
+		arg.NoRefresh,
+		arg.DeviceFlow,
+		arg.Regex,
+		arg.AppInstallUrl,
+		arg.AppInstallationsUrl,
+		arg.GithubAppID,
+		arg.GithubAppWebhookSecretEncrypted,
+		arg.GithubAppWebhookSecretKeyID,
+		arg.GithubAppPrivateKeyEncrypted,
+		arg.GithubAppPrivateKeyKeyID,
+	)
+	var i DBExternalAuthProvider
+	err := row.Scan(
+		&i.ID,
+		&i.Type,
+		&i.ClientID,
+		&i.ClientSecretEncrypted,
+		&i.ClientSecretKeyID,
+		&i.DisplayName,
+		&i.DisplayIcon,
+		&i.AuthUrl,
+		&i.TokenUrl,
+		&i.ValidateUrl,
+		&i.DeviceCodeUrl,
+		pq.Array(&i.Scopes),
+		pq.Array(&i.ExtraTokenKeys),
+		&i.NoRefresh,
+		&i.DeviceFlow,
+		&i.Regex,
+		&i.AppInstallUrl,
+		&i.AppInstallationsUrl,
+		&i.GithubAppID,
+		&i.GithubAppWebhookSecretEncrypted,
+		&i.GithubAppWebhookSecretKeyID,
+		&i.GithubAppPrivateKeyEncrypted,
+		&i.GithubAppPrivateKeyKeyID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateExternalAuthProvider = `-- name: UpdateExternalAuthProvider :one
+UPDATE external_auth_providers SET
+    display_name = COALESCE($2, display_name),
+    display_icon = COALESCE($3, display_icon),
+    scopes = COALESCE($4, scopes),
+    no_refresh = COALESCE($5, no_refresh),
+    device_flow = COALESCE($6, device_flow),
+    regex = COALESCE($7, regex),
+    updated_at = NOW()
+WHERE id = $1
+RETURNING id, type, client_id, client_secret_encrypted, client_secret_key_id, display_name, display_icon, auth_url, token_url, validate_url, device_code_url, scopes, extra_token_keys, no_refresh, device_flow, regex, app_install_url, app_installations_url, github_app_id, github_app_webhook_secret_encrypted, github_app_webhook_secret_key_id, github_app_private_key_encrypted, github_app_private_key_key_id, created_at, updated_at
+`
+
+type UpdateExternalAuthProviderParams struct {
+	ID          string         `db:"id" json:"id"`
+	DisplayName sql.NullString `db:"display_name" json:"display_name"`
+	DisplayIcon sql.NullString `db:"display_icon" json:"display_icon"`
+	Scopes      []string       `db:"scopes" json:"scopes"`
+	NoRefresh   bool           `db:"no_refresh" json:"no_refresh"`
+	DeviceFlow  bool           `db:"device_flow" json:"device_flow"`
+	Regex       sql.NullString `db:"regex" json:"regex"`
+}
+
+func (q *sqlQuerier) UpdateExternalAuthProvider(ctx context.Context, arg UpdateExternalAuthProviderParams) (DBExternalAuthProvider, error) {
+	row := q.db.QueryRowContext(ctx, updateExternalAuthProvider,
+		arg.ID,
+		arg.DisplayName,
+		arg.DisplayIcon,
+		pq.Array(arg.Scopes),
+		arg.NoRefresh,
+		arg.DeviceFlow,
+		arg.Regex,
+	)
+	var i DBExternalAuthProvider
+	err := row.Scan(
+		&i.ID,
+		&i.Type,
+		&i.ClientID,
+		&i.ClientSecretEncrypted,
+		&i.ClientSecretKeyID,
+		&i.DisplayName,
+		&i.DisplayIcon,
+		&i.AuthUrl,
+		&i.TokenUrl,
+		&i.ValidateUrl,
+		&i.DeviceCodeUrl,
+		pq.Array(&i.Scopes),
+		pq.Array(&i.ExtraTokenKeys),
+		&i.NoRefresh,
+		&i.DeviceFlow,
+		&i.Regex,
+		&i.AppInstallUrl,
+		&i.AppInstallationsUrl,
+		&i.GithubAppID,
+		&i.GithubAppWebhookSecretEncrypted,
+		&i.GithubAppWebhookSecretKeyID,
+		&i.GithubAppPrivateKeyEncrypted,
+		&i.GithubAppPrivateKeyKeyID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getFileByHashAndCreator = `-- name: GetFileByHashAndCreator :one
 SELECT
 	hash, created_at, created_by, mimetype, data, id
@@ -21607,6 +21951,437 @@ func (q *sqlQuerier) UpdateWorkspaceBuildProvisionerStateByID(ctx context.Contex
 	return err
 }
 
+const createWorkspaceCollaborator = `-- name: CreateWorkspaceCollaborator :one
+INSERT INTO workspace_collaborators (
+    workspace_id,
+    user_id,
+    access_level,
+    invited_by
+)
+VALUES ($1, $2, $3, $4)
+RETURNING id, workspace_id, user_id, access_level, invited_by, created_at
+`
+
+type CreateWorkspaceCollaboratorParams struct {
+	WorkspaceID uuid.UUID     `db:"workspace_id" json:"workspace_id"`
+	UserID      uuid.UUID     `db:"user_id" json:"user_id"`
+	AccessLevel string        `db:"access_level" json:"access_level"`
+	InvitedBy   uuid.NullUUID `db:"invited_by" json:"invited_by"`
+}
+
+func (q *sqlQuerier) CreateWorkspaceCollaborator(ctx context.Context, arg CreateWorkspaceCollaboratorParams) (WorkspaceCollaborator, error) {
+	row := q.db.QueryRowContext(ctx, createWorkspaceCollaborator,
+		arg.WorkspaceID,
+		arg.UserID,
+		arg.AccessLevel,
+		arg.InvitedBy,
+	)
+	var i WorkspaceCollaborator
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.UserID,
+		&i.AccessLevel,
+		&i.InvitedBy,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const createWorkspaceInvitation = `-- name: CreateWorkspaceInvitation :one
+INSERT INTO workspace_invitations (
+    workspace_id,
+    inviter_id,
+    email,
+    access_level,
+    token,
+    expires_at
+)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, workspace_id, inviter_id, email, access_level, token, status, expires_at, created_at, responded_at
+`
+
+type CreateWorkspaceInvitationParams struct {
+	WorkspaceID uuid.UUID `db:"workspace_id" json:"workspace_id"`
+	InviterID   uuid.UUID `db:"inviter_id" json:"inviter_id"`
+	Email       string    `db:"email" json:"email"`
+	AccessLevel string    `db:"access_level" json:"access_level"`
+	Token       string    `db:"token" json:"token"`
+	ExpiresAt   time.Time `db:"expires_at" json:"expires_at"`
+}
+
+func (q *sqlQuerier) CreateWorkspaceInvitation(ctx context.Context, arg CreateWorkspaceInvitationParams) (WorkspaceInvitation, error) {
+	row := q.db.QueryRowContext(ctx, createWorkspaceInvitation,
+		arg.WorkspaceID,
+		arg.InviterID,
+		arg.Email,
+		arg.AccessLevel,
+		arg.Token,
+		arg.ExpiresAt,
+	)
+	var i WorkspaceInvitation
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.InviterID,
+		&i.Email,
+		&i.AccessLevel,
+		&i.Token,
+		&i.Status,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+		&i.RespondedAt,
+	)
+	return i, err
+}
+
+const deleteWorkspaceCollaborator = `-- name: DeleteWorkspaceCollaborator :exec
+DELETE FROM workspace_collaborators
+WHERE id = $1
+`
+
+func (q *sqlQuerier) DeleteWorkspaceCollaborator(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteWorkspaceCollaborator, id)
+	return err
+}
+
+const deleteWorkspaceCollaboratorByUserAndWorkspace = `-- name: DeleteWorkspaceCollaboratorByUserAndWorkspace :exec
+DELETE FROM workspace_collaborators
+WHERE workspace_id = $1 AND user_id = $2
+`
+
+type DeleteWorkspaceCollaboratorByUserAndWorkspaceParams struct {
+	WorkspaceID uuid.UUID `db:"workspace_id" json:"workspace_id"`
+	UserID      uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+func (q *sqlQuerier) DeleteWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg DeleteWorkspaceCollaboratorByUserAndWorkspaceParams) error {
+	_, err := q.db.ExecContext(ctx, deleteWorkspaceCollaboratorByUserAndWorkspace, arg.WorkspaceID, arg.UserID)
+	return err
+}
+
+const deleteWorkspaceInvitation = `-- name: DeleteWorkspaceInvitation :exec
+DELETE FROM workspace_invitations
+WHERE id = $1
+`
+
+func (q *sqlQuerier) DeleteWorkspaceInvitation(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteWorkspaceInvitation, id)
+	return err
+}
+
+const expireWorkspaceInvitations = `-- name: ExpireWorkspaceInvitations :exec
+UPDATE workspace_invitations
+SET status = 'expired'
+WHERE status = 'pending' AND expires_at <= NOW()
+`
+
+func (q *sqlQuerier) ExpireWorkspaceInvitations(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, expireWorkspaceInvitations)
+	return err
+}
+
+const getPendingWorkspaceInvitationsByEmail = `-- name: GetPendingWorkspaceInvitationsByEmail :many
+SELECT id, workspace_id, inviter_id, email, access_level, token, status, expires_at, created_at, responded_at FROM workspace_invitations
+WHERE email = $1 AND status = 'pending' AND expires_at > NOW()
+ORDER BY created_at DESC
+`
+
+func (q *sqlQuerier) GetPendingWorkspaceInvitationsByEmail(ctx context.Context, email string) ([]WorkspaceInvitation, error) {
+	rows, err := q.db.QueryContext(ctx, getPendingWorkspaceInvitationsByEmail, email)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WorkspaceInvitation
+	for rows.Next() {
+		var i WorkspaceInvitation
+		if err := rows.Scan(
+			&i.ID,
+			&i.WorkspaceID,
+			&i.InviterID,
+			&i.Email,
+			&i.AccessLevel,
+			&i.Token,
+			&i.Status,
+			&i.ExpiresAt,
+			&i.CreatedAt,
+			&i.RespondedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getWorkspaceCollaborationsByUserID = `-- name: GetWorkspaceCollaborationsByUserID :many
+SELECT id, workspace_id, user_id, access_level, invited_by, created_at FROM workspace_collaborators
+WHERE user_id = $1
+ORDER BY created_at DESC
+`
+
+func (q *sqlQuerier) GetWorkspaceCollaborationsByUserID(ctx context.Context, userID uuid.UUID) ([]WorkspaceCollaborator, error) {
+	rows, err := q.db.QueryContext(ctx, getWorkspaceCollaborationsByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WorkspaceCollaborator
+	for rows.Next() {
+		var i WorkspaceCollaborator
+		if err := rows.Scan(
+			&i.ID,
+			&i.WorkspaceID,
+			&i.UserID,
+			&i.AccessLevel,
+			&i.InvitedBy,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getWorkspaceCollaboratorByID = `-- name: GetWorkspaceCollaboratorByID :one
+SELECT id, workspace_id, user_id, access_level, invited_by, created_at FROM workspace_collaborators
+WHERE id = $1
+LIMIT 1
+`
+
+func (q *sqlQuerier) GetWorkspaceCollaboratorByID(ctx context.Context, id uuid.UUID) (WorkspaceCollaborator, error) {
+	row := q.db.QueryRowContext(ctx, getWorkspaceCollaboratorByID, id)
+	var i WorkspaceCollaborator
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.UserID,
+		&i.AccessLevel,
+		&i.InvitedBy,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getWorkspaceCollaboratorByUserAndWorkspace = `-- name: GetWorkspaceCollaboratorByUserAndWorkspace :one
+SELECT id, workspace_id, user_id, access_level, invited_by, created_at FROM workspace_collaborators
+WHERE workspace_id = $1 AND user_id = $2
+LIMIT 1
+`
+
+type GetWorkspaceCollaboratorByUserAndWorkspaceParams struct {
+	WorkspaceID uuid.UUID `db:"workspace_id" json:"workspace_id"`
+	UserID      uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+func (q *sqlQuerier) GetWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg GetWorkspaceCollaboratorByUserAndWorkspaceParams) (WorkspaceCollaborator, error) {
+	row := q.db.QueryRowContext(ctx, getWorkspaceCollaboratorByUserAndWorkspace, arg.WorkspaceID, arg.UserID)
+	var i WorkspaceCollaborator
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.UserID,
+		&i.AccessLevel,
+		&i.InvitedBy,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getWorkspaceCollaboratorsByWorkspaceID = `-- name: GetWorkspaceCollaboratorsByWorkspaceID :many
+SELECT id, workspace_id, user_id, access_level, invited_by, created_at FROM workspace_collaborators
+WHERE workspace_id = $1
+ORDER BY created_at DESC
+`
+
+func (q *sqlQuerier) GetWorkspaceCollaboratorsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]WorkspaceCollaborator, error) {
+	rows, err := q.db.QueryContext(ctx, getWorkspaceCollaboratorsByWorkspaceID, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WorkspaceCollaborator
+	for rows.Next() {
+		var i WorkspaceCollaborator
+		if err := rows.Scan(
+			&i.ID,
+			&i.WorkspaceID,
+			&i.UserID,
+			&i.AccessLevel,
+			&i.InvitedBy,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getWorkspaceInvitationByID = `-- name: GetWorkspaceInvitationByID :one
+SELECT id, workspace_id, inviter_id, email, access_level, token, status, expires_at, created_at, responded_at FROM workspace_invitations
+WHERE id = $1
+LIMIT 1
+`
+
+func (q *sqlQuerier) GetWorkspaceInvitationByID(ctx context.Context, id uuid.UUID) (WorkspaceInvitation, error) {
+	row := q.db.QueryRowContext(ctx, getWorkspaceInvitationByID, id)
+	var i WorkspaceInvitation
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.InviterID,
+		&i.Email,
+		&i.AccessLevel,
+		&i.Token,
+		&i.Status,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+		&i.RespondedAt,
+	)
+	return i, err
+}
+
+const getWorkspaceInvitationByToken = `-- name: GetWorkspaceInvitationByToken :one
+SELECT id, workspace_id, inviter_id, email, access_level, token, status, expires_at, created_at, responded_at FROM workspace_invitations
+WHERE token = $1
+LIMIT 1
+`
+
+func (q *sqlQuerier) GetWorkspaceInvitationByToken(ctx context.Context, token string) (WorkspaceInvitation, error) {
+	row := q.db.QueryRowContext(ctx, getWorkspaceInvitationByToken, token)
+	var i WorkspaceInvitation
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.InviterID,
+		&i.Email,
+		&i.AccessLevel,
+		&i.Token,
+		&i.Status,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+		&i.RespondedAt,
+	)
+	return i, err
+}
+
+const getWorkspaceInvitationsByWorkspaceID = `-- name: GetWorkspaceInvitationsByWorkspaceID :many
+SELECT id, workspace_id, inviter_id, email, access_level, token, status, expires_at, created_at, responded_at FROM workspace_invitations
+WHERE workspace_id = $1
+ORDER BY created_at DESC
+`
+
+func (q *sqlQuerier) GetWorkspaceInvitationsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]WorkspaceInvitation, error) {
+	rows, err := q.db.QueryContext(ctx, getWorkspaceInvitationsByWorkspaceID, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WorkspaceInvitation
+	for rows.Next() {
+		var i WorkspaceInvitation
+		if err := rows.Scan(
+			&i.ID,
+			&i.WorkspaceID,
+			&i.InviterID,
+			&i.Email,
+			&i.AccessLevel,
+			&i.Token,
+			&i.Status,
+			&i.ExpiresAt,
+			&i.CreatedAt,
+			&i.RespondedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateWorkspaceCollaboratorAccessLevel = `-- name: UpdateWorkspaceCollaboratorAccessLevel :one
+UPDATE workspace_collaborators
+SET access_level = $2
+WHERE id = $1
+RETURNING id, workspace_id, user_id, access_level, invited_by, created_at
+`
+
+type UpdateWorkspaceCollaboratorAccessLevelParams struct {
+	ID          uuid.UUID `db:"id" json:"id"`
+	AccessLevel string    `db:"access_level" json:"access_level"`
+}
+
+func (q *sqlQuerier) UpdateWorkspaceCollaboratorAccessLevel(ctx context.Context, arg UpdateWorkspaceCollaboratorAccessLevelParams) (WorkspaceCollaborator, error) {
+	row := q.db.QueryRowContext(ctx, updateWorkspaceCollaboratorAccessLevel, arg.ID, arg.AccessLevel)
+	var i WorkspaceCollaborator
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.UserID,
+		&i.AccessLevel,
+		&i.InvitedBy,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const updateWorkspaceInvitationStatus = `-- name: UpdateWorkspaceInvitationStatus :one
+UPDATE workspace_invitations
+SET status = $2, responded_at = NOW()
+WHERE id = $1
+RETURNING id, workspace_id, inviter_id, email, access_level, token, status, expires_at, created_at, responded_at
+`
+
+type UpdateWorkspaceInvitationStatusParams struct {
+	ID     uuid.UUID `db:"id" json:"id"`
+	Status string    `db:"status" json:"status"`
+}
+
+func (q *sqlQuerier) UpdateWorkspaceInvitationStatus(ctx context.Context, arg UpdateWorkspaceInvitationStatusParams) (WorkspaceInvitation, error) {
+	row := q.db.QueryRowContext(ctx, updateWorkspaceInvitationStatus, arg.ID, arg.Status)
+	var i WorkspaceInvitation
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.InviterID,
+		&i.Email,
+		&i.AccessLevel,
+		&i.Token,
+		&i.Status,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+		&i.RespondedAt,
+	)
+	return i, err
+}
+
 const getWorkspaceModulesByJobID = `-- name: GetWorkspaceModulesByJobID :many
 SELECT
 	id, job_id, transition, source, version, key, created_at
@@ -22100,6 +22875,36 @@ type BatchUpdateWorkspaceNextStartAtParams struct {
 func (q *sqlQuerier) BatchUpdateWorkspaceNextStartAt(ctx context.Context, arg BatchUpdateWorkspaceNextStartAtParams) error {
 	_, err := q.db.ExecContext(ctx, batchUpdateWorkspaceNextStartAt, pq.Array(arg.IDs), pq.Array(arg.NextStartAts))
 	return err
+}
+
+const countWorkspacesByOrganizationID = `-- name: CountWorkspacesByOrganizationID :one
+SELECT COUNT(*)::bigint AS count
+FROM workspaces
+WHERE organization_id = $1
+  AND deleted = false
+`
+
+// Count non-deleted workspaces in an organization
+func (q *sqlQuerier) CountWorkspacesByOrganizationID(ctx context.Context, organizationID uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countWorkspacesByOrganizationID, organizationID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countWorkspacesByOwnerID = `-- name: CountWorkspacesByOwnerID :one
+SELECT COUNT(*)::bigint AS count
+FROM workspaces
+WHERE owner_id = $1
+  AND deleted = false
+`
+
+// Count non-deleted workspaces owned by a specific user
+func (q *sqlQuerier) CountWorkspacesByOwnerID(ctx context.Context, ownerID uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countWorkspacesByOwnerID, ownerID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const deleteWorkspaceACLByID = `-- name: DeleteWorkspaceACLByID :exec
@@ -24113,32 +24918,4 @@ func (q *sqlQuerier) InsertWorkspaceAgentScripts(ctx context.Context, arg Insert
 		return nil, err
 	}
 	return items, nil
-}
-
-const countWorkspacesByOwnerID = `-- name: CountWorkspacesByOwnerID :one
-SELECT COUNT(*)::bigint AS count
-FROM workspaces
-WHERE owner_id = $1
-  AND deleted = false
-`
-
-func (q *sqlQuerier) CountWorkspacesByOwnerID(ctx context.Context, ownerID uuid.UUID) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countWorkspacesByOwnerID, ownerID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const countWorkspacesByOrganizationID = `-- name: CountWorkspacesByOrganizationID :one
-SELECT COUNT(*)::bigint AS count
-FROM workspaces
-WHERE organization_id = $1
-  AND deleted = false
-`
-
-func (q *sqlQuerier) CountWorkspacesByOrganizationID(ctx context.Context, organizationID uuid.UUID) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countWorkspacesByOrganizationID, organizationID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
 }

@@ -1200,6 +1200,7 @@ const (
 	CryptoKeyFeatureWorkspaceAppsAPIKey CryptoKeyFeature = "workspace_apps_api_key"
 	CryptoKeyFeatureOIDCConvert         CryptoKeyFeature = "oidc_convert"
 	CryptoKeyFeatureTailnetResume       CryptoKeyFeature = "tailnet_resume"
+	CryptoKeyFeatureExternalAuth        CryptoKeyFeature = "external_auth"
 )
 
 func (e *CryptoKeyFeature) Scan(src interface{}) error {
@@ -1242,7 +1243,8 @@ func (e CryptoKeyFeature) Valid() bool {
 	case CryptoKeyFeatureWorkspaceAppsToken,
 		CryptoKeyFeatureWorkspaceAppsAPIKey,
 		CryptoKeyFeatureOIDCConvert,
-		CryptoKeyFeatureTailnetResume:
+		CryptoKeyFeatureTailnetResume,
+		CryptoKeyFeatureExternalAuth:
 		return true
 	}
 	return false
@@ -1254,6 +1256,7 @@ func AllCryptoKeyFeatureValues() []CryptoKeyFeature {
 		CryptoKeyFeatureWorkspaceAppsAPIKey,
 		CryptoKeyFeatureOIDCConvert,
 		CryptoKeyFeatureTailnetResume,
+		CryptoKeyFeatureExternalAuth,
 	}
 }
 
@@ -3759,6 +3762,45 @@ type DBCryptKey struct {
 	Test string `db:"test" json:"test"`
 }
 
+// Temporary state storage for GitHub App manifest creation flow
+type DBExternalAuthManifestState struct {
+	State       string    `db:"state" json:"state"`
+	RedirectUri string    `db:"redirect_uri" json:"redirect_uri"`
+	CreatedAt   time.Time `db:"created_at" json:"created_at"`
+	ExpiresAt   time.Time `db:"expires_at" json:"expires_at"`
+}
+
+// Stores dynamically created external auth providers like GitHub Apps created via manifest flow
+type DBExternalAuthProvider struct {
+	ID       string `db:"id" json:"id"`
+	Type     string `db:"type" json:"type"`
+	ClientID string `db:"client_id" json:"client_id"`
+	// Encrypted OAuth client secret using dbcrypt
+	ClientSecretEncrypted []byte         `db:"client_secret_encrypted" json:"client_secret_encrypted"`
+	ClientSecretKeyID     sql.NullString `db:"client_secret_key_id" json:"client_secret_key_id"`
+	DisplayName           sql.NullString `db:"display_name" json:"display_name"`
+	DisplayIcon           sql.NullString `db:"display_icon" json:"display_icon"`
+	AuthUrl               sql.NullString `db:"auth_url" json:"auth_url"`
+	TokenUrl              sql.NullString `db:"token_url" json:"token_url"`
+	ValidateUrl           sql.NullString `db:"validate_url" json:"validate_url"`
+	DeviceCodeUrl         sql.NullString `db:"device_code_url" json:"device_code_url"`
+	Scopes                []string       `db:"scopes" json:"scopes"`
+	ExtraTokenKeys        []string       `db:"extra_token_keys" json:"extra_token_keys"`
+	NoRefresh             bool           `db:"no_refresh" json:"no_refresh"`
+	DeviceFlow            bool           `db:"device_flow" json:"device_flow"`
+	Regex                 sql.NullString `db:"regex" json:"regex"`
+	AppInstallUrl         sql.NullString `db:"app_install_url" json:"app_install_url"`
+	AppInstallationsUrl   sql.NullString `db:"app_installations_url" json:"app_installations_url"`
+	// GitHub App ID for GitHub Apps created via manifest
+	GithubAppID                     sql.NullInt64  `db:"github_app_id" json:"github_app_id"`
+	GithubAppWebhookSecretEncrypted []byte         `db:"github_app_webhook_secret_encrypted" json:"github_app_webhook_secret_encrypted"`
+	GithubAppWebhookSecretKeyID     sql.NullString `db:"github_app_webhook_secret_key_id" json:"github_app_webhook_secret_key_id"`
+	GithubAppPrivateKeyEncrypted    []byte         `db:"github_app_private_key_encrypted" json:"github_app_private_key_encrypted"`
+	GithubAppPrivateKeyKeyID        sql.NullString `db:"github_app_private_key_key_id" json:"github_app_private_key_key_id"`
+	CreatedAt                       time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt                       time.Time      `db:"updated_at" json:"updated_at"`
+}
+
 type ExternalAuthLink struct {
 	ProviderID        string    `db:"provider_id" json:"provider_id"`
 	UserID            uuid.UUID `db:"user_id" json:"user_id"`
@@ -4984,6 +5026,28 @@ type WorkspaceBuildTable struct {
 	TemplateVersionPresetID uuid.NullUUID       `db:"template_version_preset_id" json:"template_version_preset_id"`
 	HasAITask               sql.NullBool        `db:"has_ai_task" json:"has_ai_task"`
 	HasExternalAgent        sql.NullBool        `db:"has_external_agent" json:"has_external_agent"`
+}
+
+type WorkspaceCollaborator struct {
+	ID          uuid.UUID     `db:"id" json:"id"`
+	WorkspaceID uuid.UUID     `db:"workspace_id" json:"workspace_id"`
+	UserID      uuid.UUID     `db:"user_id" json:"user_id"`
+	AccessLevel string        `db:"access_level" json:"access_level"`
+	InvitedBy   uuid.NullUUID `db:"invited_by" json:"invited_by"`
+	CreatedAt   time.Time     `db:"created_at" json:"created_at"`
+}
+
+type WorkspaceInvitation struct {
+	ID          uuid.UUID    `db:"id" json:"id"`
+	WorkspaceID uuid.UUID    `db:"workspace_id" json:"workspace_id"`
+	InviterID   uuid.UUID    `db:"inviter_id" json:"inviter_id"`
+	Email       string       `db:"email" json:"email"`
+	AccessLevel string       `db:"access_level" json:"access_level"`
+	Token       string       `db:"token" json:"token"`
+	Status      string       `db:"status" json:"status"`
+	ExpiresAt   time.Time    `db:"expires_at" json:"expires_at"`
+	CreatedAt   time.Time    `db:"created_at" json:"created_at"`
+	RespondedAt sql.NullTime `db:"responded_at" json:"responded_at"`
 }
 
 type WorkspaceLatestBuild struct {

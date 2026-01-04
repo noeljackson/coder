@@ -1521,6 +1521,10 @@ func (q *querier) CleanTailnetTunnels(ctx context.Context) error {
 	return q.db.CleanTailnetTunnels(ctx)
 }
 
+func (q *querier) CleanupExpiredManifestStates(ctx context.Context) error {
+	panic("not implemented")
+}
+
 func (q *querier) CountAIBridgeInterceptions(ctx context.Context, arg database.CountAIBridgeInterceptionsParams) (int64, error) {
 	prep, err := prepareSQLFilter(ctx, q.auth, policy.ActionRead, rbac.ResourceAibridgeInterception.Type)
 	if err != nil {
@@ -1577,12 +1581,38 @@ func (q *querier) CountUnreadInboxNotificationsByUserID(ctx context.Context, use
 	return q.db.CountUnreadInboxNotificationsByUserID(ctx, userID)
 }
 
+// CountWorkspacesByOrganizationID counts workspaces for limit enforcement.
+// Uses system authorization since this is an internal operation.
+func (q *querier) CountWorkspacesByOrganizationID(ctx context.Context, organizationID uuid.UUID) (int64, error) {
+	if err := q.authorizeContext(ctx, policy.ActionRead, rbac.ResourceSystem); err != nil {
+		return 0, err
+	}
+	return q.db.CountWorkspacesByOrganizationID(ctx, organizationID)
+}
+
+// CountWorkspacesByOwnerID counts workspaces for limit enforcement.
+// Uses system authorization since this is an internal operation.
+func (q *querier) CountWorkspacesByOwnerID(ctx context.Context, ownerID uuid.UUID) (int64, error) {
+	if err := q.authorizeContext(ctx, policy.ActionRead, rbac.ResourceSystem); err != nil {
+		return 0, err
+	}
+	return q.db.CountWorkspacesByOwnerID(ctx, ownerID)
+}
+
 func (q *querier) CreateUserSecret(ctx context.Context, arg database.CreateUserSecretParams) (database.UserSecret, error) {
 	obj := rbac.ResourceUserSecret.WithOwner(arg.UserID.String())
 	if err := q.authorizeContext(ctx, policy.ActionCreate, obj); err != nil {
 		return database.UserSecret{}, err
 	}
 	return q.db.CreateUserSecret(ctx, arg)
+}
+
+func (q *querier) CreateWorkspaceCollaborator(ctx context.Context, arg database.CreateWorkspaceCollaboratorParams) (database.WorkspaceCollaborator, error) {
+	panic("not implemented")
+}
+
+func (q *querier) CreateWorkspaceInvitation(ctx context.Context, arg database.CreateWorkspaceInvitationParams) (database.WorkspaceInvitation, error) {
+	panic("not implemented")
 }
 
 // TODO: Handle org scoped lookups
@@ -1682,6 +1712,14 @@ func (q *querier) DeleteExternalAuthLink(ctx context.Context, arg database.Delet
 		//nolint:gosimple
 		return q.db.GetExternalAuthLink(ctx, database.GetExternalAuthLinkParams{UserID: arg.UserID, ProviderID: arg.ProviderID})
 	}, q.db.DeleteExternalAuthLink)(ctx, arg)
+}
+
+func (q *querier) DeleteExternalAuthManifestState(ctx context.Context, state string) error {
+	panic("not implemented")
+}
+
+func (q *querier) DeleteExternalAuthProvider(ctx context.Context, id string) error {
+	panic("not implemented")
 }
 
 func (q *querier) DeleteGitSSHKey(ctx context.Context, userID uuid.UUID) error {
@@ -1972,6 +2010,18 @@ func (q *querier) DeleteWorkspaceAgentPortSharesByTemplate(ctx context.Context, 
 	return q.db.DeleteWorkspaceAgentPortSharesByTemplate(ctx, templateID)
 }
 
+func (q *querier) DeleteWorkspaceCollaborator(ctx context.Context, id uuid.UUID) error {
+	panic("not implemented")
+}
+
+func (q *querier) DeleteWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg database.DeleteWorkspaceCollaboratorByUserAndWorkspaceParams) error {
+	panic("not implemented")
+}
+
+func (q *querier) DeleteWorkspaceInvitation(ctx context.Context, id uuid.UUID) error {
+	panic("not implemented")
+}
+
 func (q *querier) DeleteWorkspaceSubAgentByID(ctx context.Context, id uuid.UUID) error {
 	workspace, err := q.db.GetWorkspaceByAgentID(ctx, id)
 	if err != nil {
@@ -2004,6 +2054,10 @@ func (q *querier) ExpirePrebuildsAPIKeys(ctx context.Context, now time.Time) err
 		return err
 	}
 	return q.db.ExpirePrebuildsAPIKeys(ctx, now)
+}
+
+func (q *querier) ExpireWorkspaceInvitations(ctx context.Context) error {
+	panic("not implemented")
 }
 
 func (q *querier) FavoriteWorkspace(ctx context.Context, id uuid.UUID) error {
@@ -2326,6 +2380,18 @@ func (q *querier) GetExternalAuthLink(ctx context.Context, arg database.GetExter
 
 func (q *querier) GetExternalAuthLinksByUserID(ctx context.Context, userID uuid.UUID) ([]database.ExternalAuthLink, error) {
 	return fetchWithPostFilter(q.auth, policy.ActionReadPersonal, q.db.GetExternalAuthLinksByUserID)(ctx, userID)
+}
+
+func (q *querier) GetExternalAuthManifestState(ctx context.Context, state string) (database.DBExternalAuthManifestState, error) {
+	panic("not implemented")
+}
+
+func (q *querier) GetExternalAuthProviderByID(ctx context.Context, id string) (database.DBExternalAuthProvider, error) {
+	panic("not implemented")
+}
+
+func (q *querier) GetExternalAuthProviders(ctx context.Context) ([]database.DBExternalAuthProvider, error) {
+	panic("not implemented")
 }
 
 func (q *querier) GetFailedWorkspaceBuildsByTemplateID(ctx context.Context, arg database.GetFailedWorkspaceBuildsByTemplateIDParams) ([]database.GetFailedWorkspaceBuildsByTemplateIDRow, error) {
@@ -2744,6 +2810,10 @@ func (q *querier) GetParameterSchemasByJobID(ctx context.Context, jobID uuid.UUI
 		return nil, err
 	}
 	return q.db.GetParameterSchemasByJobID(ctx, jobID)
+}
+
+func (q *querier) GetPendingWorkspaceInvitationsByEmail(ctx context.Context, email string) ([]database.WorkspaceInvitation, error) {
+	panic("not implemented")
 }
 
 func (q *querier) GetPrebuildMetrics(ctx context.Context) ([]database.GetPrebuildMetricsRow, error) {
@@ -3897,26 +3967,36 @@ func (q *querier) GetWorkspaceByResourceID(ctx context.Context, resourceID uuid.
 	return fetch(q.log, q.auth, q.db.GetWorkspaceByResourceID)(ctx, resourceID)
 }
 
-// CountWorkspacesByOwnerID counts workspaces for limit enforcement.
-// Uses system authorization since this is an internal operation.
-func (q *querier) CountWorkspacesByOwnerID(ctx context.Context, ownerID uuid.UUID) (int64, error) {
-	if err := q.authorizeContext(ctx, policy.ActionRead, rbac.ResourceSystem); err != nil {
-		return 0, err
-	}
-	return q.db.CountWorkspacesByOwnerID(ctx, ownerID)
-}
-
-// CountWorkspacesByOrganizationID counts workspaces for limit enforcement.
-// Uses system authorization since this is an internal operation.
-func (q *querier) CountWorkspacesByOrganizationID(ctx context.Context, organizationID uuid.UUID) (int64, error) {
-	if err := q.authorizeContext(ctx, policy.ActionRead, rbac.ResourceSystem); err != nil {
-		return 0, err
-	}
-	return q.db.CountWorkspacesByOrganizationID(ctx, organizationID)
-}
-
 func (q *querier) GetWorkspaceByWorkspaceAppID(ctx context.Context, workspaceAppID uuid.UUID) (database.Workspace, error) {
 	return fetch(q.log, q.auth, q.db.GetWorkspaceByWorkspaceAppID)(ctx, workspaceAppID)
+}
+
+func (q *querier) GetWorkspaceCollaborationsByUserID(ctx context.Context, userID uuid.UUID) ([]database.WorkspaceCollaborator, error) {
+	panic("not implemented")
+}
+
+func (q *querier) GetWorkspaceCollaboratorByID(ctx context.Context, id uuid.UUID) (database.WorkspaceCollaborator, error) {
+	panic("not implemented")
+}
+
+func (q *querier) GetWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg database.GetWorkspaceCollaboratorByUserAndWorkspaceParams) (database.WorkspaceCollaborator, error) {
+	panic("not implemented")
+}
+
+func (q *querier) GetWorkspaceCollaboratorsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]database.WorkspaceCollaborator, error) {
+	panic("not implemented")
+}
+
+func (q *querier) GetWorkspaceInvitationByID(ctx context.Context, id uuid.UUID) (database.WorkspaceInvitation, error) {
+	panic("not implemented")
+}
+
+func (q *querier) GetWorkspaceInvitationByToken(ctx context.Context, token string) (database.WorkspaceInvitation, error) {
+	panic("not implemented")
+}
+
+func (q *querier) GetWorkspaceInvitationsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]database.WorkspaceInvitation, error) {
+	panic("not implemented")
 }
 
 func (q *querier) GetWorkspaceModulesByJobID(ctx context.Context, jobID uuid.UUID) ([]database.WorkspaceModule, error) {
@@ -4194,6 +4274,14 @@ func (q *querier) InsertDeploymentID(ctx context.Context, value string) error {
 
 func (q *querier) InsertExternalAuthLink(ctx context.Context, arg database.InsertExternalAuthLinkParams) (database.ExternalAuthLink, error) {
 	return insertWithAction(q.log, q.auth, rbac.ResourceUser.WithID(arg.UserID).WithOwner(arg.UserID.String()), policy.ActionUpdatePersonal, q.db.InsertExternalAuthLink)(ctx, arg)
+}
+
+func (q *querier) InsertExternalAuthManifestState(ctx context.Context, arg database.InsertExternalAuthManifestStateParams) (database.DBExternalAuthManifestState, error) {
+	panic("not implemented")
+}
+
+func (q *querier) InsertExternalAuthProvider(ctx context.Context, arg database.InsertExternalAuthProviderParams) (database.DBExternalAuthProvider, error) {
+	panic("not implemented")
 }
 
 func (q *querier) InsertFile(ctx context.Context, arg database.InsertFileParams) (database.File, error) {
@@ -4937,6 +5025,10 @@ func (q *querier) UpdateExternalAuthLinkRefreshToken(ctx context.Context, arg da
 		return q.db.GetExternalAuthLink(ctx, database.GetExternalAuthLinkParams{UserID: arg.UserID, ProviderID: arg.ProviderID})
 	}
 	return fetchAndExec(q.log, q.auth, policy.ActionUpdatePersonal, fetch, q.db.UpdateExternalAuthLinkRefreshToken)(ctx, arg)
+}
+
+func (q *querier) UpdateExternalAuthProvider(ctx context.Context, arg database.UpdateExternalAuthProviderParams) (database.DBExternalAuthProvider, error) {
+	panic("not implemented")
 }
 
 func (q *querier) UpdateGitSSHKey(ctx context.Context, arg database.UpdateGitSSHKeyParams) (database.GitSSHKey, error) {
@@ -5796,6 +5888,10 @@ func (q *querier) UpdateWorkspaceBuildProvisionerStateByID(ctx context.Context, 
 	return q.db.UpdateWorkspaceBuildProvisionerStateByID(ctx, arg)
 }
 
+func (q *querier) UpdateWorkspaceCollaboratorAccessLevel(ctx context.Context, arg database.UpdateWorkspaceCollaboratorAccessLevelParams) (database.WorkspaceCollaborator, error) {
+	panic("not implemented")
+}
+
 // Deprecated: Use SoftDeleteWorkspaceByID
 func (q *querier) UpdateWorkspaceDeletedByID(ctx context.Context, arg database.UpdateWorkspaceDeletedByIDParams) error {
 	// TODO deleteQ me, placeholder for database.Store
@@ -5815,6 +5911,10 @@ func (q *querier) UpdateWorkspaceDormantDeletingAt(ctx context.Context, arg data
 		return w.WorkspaceTable(), nil
 	}
 	return updateWithReturn(q.log, q.auth, fetch, q.db.UpdateWorkspaceDormantDeletingAt)(ctx, arg)
+}
+
+func (q *querier) UpdateWorkspaceInvitationStatus(ctx context.Context, arg database.UpdateWorkspaceInvitationStatusParams) (database.WorkspaceInvitation, error) {
+	panic("not implemented")
 }
 
 func (q *querier) UpdateWorkspaceLastUsedAt(ctx context.Context, arg database.UpdateWorkspaceLastUsedAtParams) error {

@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to build (e.g., 2.29.1-limits)'
+        description: 'Version to build (e.g., 2.29.1-sonica)'
         required: false
         default: ''
 
@@ -62,9 +62,9 @@ jobs:
           elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            # Use base coder version + -limits suffix
+            # Use base coder version + -sonica suffix
             BASE_VERSION=$(./scripts/version.sh)
-            VERSION="${BASE_VERSION}-limits"
+            VERSION="${BASE_VERSION}-sonica"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
@@ -115,7 +115,7 @@ jobs:
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
             BASE_VERSION=$(./scripts/version.sh)
-            VERSION="${BASE_VERSION}-limits"
+            VERSION="${BASE_VERSION}-sonica"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building Docker image version: $VERSION"
@@ -195,8 +195,8 @@ jobs:
           ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt
           WORKDIR /home/coder
 
-          LABEL org.opencontainers.image.title="Coder AGPL (Workspace Limits)"
-          LABEL org.opencontainers.image.description="Coder AGPL with workspace limits feature"
+          LABEL org.opencontainers.image.title="Coder AGPL (Sonica Fork)"
+          LABEL org.opencontainers.image.description="Sonica fork of Coder AGPL with custom features"
           LABEL org.opencontainers.image.source="https://github.com/noeljackson/coder"
 
           ENTRYPOINT [ "/opt/coder", "server" ]

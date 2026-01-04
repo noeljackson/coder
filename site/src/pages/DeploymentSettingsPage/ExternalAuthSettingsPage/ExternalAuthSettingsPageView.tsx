@@ -1,5 +1,9 @@
 import { css } from "@emotion/react";
-import type { DeploymentValues, ExternalAuthConfig } from "api/typesGenerated";
+import type {
+	DeploymentValues,
+	ExternalAuthConfig,
+	ExternalAuthProviderConfig,
+} from "api/typesGenerated";
 import { Alert } from "components/Alert/Alert";
 import { PremiumBadge } from "components/Badges/Badges";
 import {
@@ -18,18 +22,26 @@ import {
 } from "components/Table/Table";
 import type { FC } from "react";
 import { docs } from "utils/docs";
+import { CreateGitHubAppDialog } from "./CreateGitHubAppDialog";
 
 type ExternalAuthSettingsPageViewProps = {
 	config: DeploymentValues;
+	dynamicProviders?: ExternalAuthProviderConfig[];
+	onProviderDeleted?: () => void;
 };
 
 export const ExternalAuthSettingsPageView: FC<
 	ExternalAuthSettingsPageViewProps
-> = ({ config }) => {
+> = ({ config, dynamicProviders = [], onProviderDeleted }) => {
 	return (
 		<>
 			<SettingsHeader
-				actions={<SettingsHeaderDocsLink href={docs("/admin/external-auth")} />}
+				actions={
+					<div className="flex items-center gap-2">
+						<CreateGitHubAppDialog onSuccess={onProviderDeleted} />
+						<SettingsHeaderDocsLink href={docs("/admin/external-auth")} />
+					</div>
+				}
 			>
 				<SettingsHeaderTitle>External Authentication</SettingsHeaderTitle>
 				<SettingsHeaderDescription>
@@ -105,6 +117,63 @@ export const ExternalAuthSettingsPageView: FC<
 						})}
 				</TableBody>
 			</Table>
+
+			{dynamicProviders.length > 0 && (
+				<>
+					<h3 className="mb-4 mt-8 text-lg font-semibold">
+						Dynamically Configured Providers
+					</h3>
+					<p className="mb-4 text-sm text-content-secondary">
+						These providers were created through the UI and are stored in the
+						database.
+					</p>
+					<Table
+						css={css`
+							& td {
+								padding-top: 24px;
+								padding-bottom: 24px;
+							}
+
+							& td:last-child,
+							& th:last-child {
+								padding-left: 32px;
+							}
+						`}
+					>
+						<TableHeader>
+							<TableRow>
+								<TableHead className="w-1/4">ID</TableHead>
+								<TableHead className="w-1/4">Type</TableHead>
+								<TableHead className="w-1/4">Client ID</TableHead>
+								<TableHead className="w-1/4">Created</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{dynamicProviders.map((provider) => (
+								<TableRow key={provider.id}>
+									<TableCell>
+										<div className="flex items-center gap-2">
+											{provider.display_icon && (
+												<img
+													src={provider.display_icon}
+													alt=""
+													className="h-5 w-5"
+												/>
+											)}
+											{provider.display_name || provider.id}
+										</div>
+									</TableCell>
+									<TableCell>{provider.type}</TableCell>
+									<TableCell>{provider.client_id}</TableCell>
+									<TableCell>
+										{new Date(provider.created_at).toLocaleDateString()}
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				</>
+			)}
 		</>
 	);
 };

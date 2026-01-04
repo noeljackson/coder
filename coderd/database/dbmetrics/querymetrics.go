@@ -193,6 +193,13 @@ func (m queryMetricsStore) CleanTailnetTunnels(ctx context.Context) error {
 	return r0
 }
 
+func (m queryMetricsStore) CleanupExpiredManifestStates(ctx context.Context) error {
+	start := time.Now()
+	r0 := m.s.CleanupExpiredManifestStates(ctx)
+	m.queryLatencies.WithLabelValues("CleanupExpiredManifestStates").Observe(time.Since(start).Seconds())
+	return r0
+}
+
 func (m queryMetricsStore) CountAIBridgeInterceptions(ctx context.Context, arg database.CountAIBridgeInterceptionsParams) (int64, error) {
 	start := time.Now()
 	r0, r1 := m.s.CountAIBridgeInterceptions(ctx, arg)
@@ -235,10 +242,38 @@ func (m queryMetricsStore) CountUnreadInboxNotificationsByUserID(ctx context.Con
 	return r0, r1
 }
 
+func (m queryMetricsStore) CountWorkspacesByOrganizationID(ctx context.Context, organizationID uuid.UUID) (int64, error) {
+	start := time.Now()
+	r0, r1 := m.s.CountWorkspacesByOrganizationID(ctx, organizationID)
+	m.queryLatencies.WithLabelValues("CountWorkspacesByOrganizationID").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
+func (m queryMetricsStore) CountWorkspacesByOwnerID(ctx context.Context, ownerID uuid.UUID) (int64, error) {
+	start := time.Now()
+	r0, r1 := m.s.CountWorkspacesByOwnerID(ctx, ownerID)
+	m.queryLatencies.WithLabelValues("CountWorkspacesByOwnerID").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
 func (m queryMetricsStore) CreateUserSecret(ctx context.Context, arg database.CreateUserSecretParams) (database.UserSecret, error) {
 	start := time.Now()
 	r0, r1 := m.s.CreateUserSecret(ctx, arg)
 	m.queryLatencies.WithLabelValues("CreateUserSecret").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
+func (m queryMetricsStore) CreateWorkspaceCollaborator(ctx context.Context, arg database.CreateWorkspaceCollaboratorParams) (database.WorkspaceCollaborator, error) {
+	start := time.Now()
+	r0, r1 := m.s.CreateWorkspaceCollaborator(ctx, arg)
+	m.queryLatencies.WithLabelValues("CreateWorkspaceCollaborator").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
+func (m queryMetricsStore) CreateWorkspaceInvitation(ctx context.Context, arg database.CreateWorkspaceInvitationParams) (database.WorkspaceInvitation, error) {
+	start := time.Now()
+	r0, r1 := m.s.CreateWorkspaceInvitation(ctx, arg)
+	m.queryLatencies.WithLabelValues("CreateWorkspaceInvitation").Observe(time.Since(start).Seconds())
 	return r0, r1
 }
 
@@ -323,6 +358,20 @@ func (m queryMetricsStore) DeleteExternalAuthLink(ctx context.Context, arg datab
 	start := time.Now()
 	r0 := m.s.DeleteExternalAuthLink(ctx, arg)
 	m.queryLatencies.WithLabelValues("DeleteExternalAuthLink").Observe(time.Since(start).Seconds())
+	return r0
+}
+
+func (m queryMetricsStore) DeleteExternalAuthManifestState(ctx context.Context, state string) error {
+	start := time.Now()
+	r0 := m.s.DeleteExternalAuthManifestState(ctx, state)
+	m.queryLatencies.WithLabelValues("DeleteExternalAuthManifestState").Observe(time.Since(start).Seconds())
+	return r0
+}
+
+func (m queryMetricsStore) DeleteExternalAuthProvider(ctx context.Context, id string) error {
+	start := time.Now()
+	r0 := m.s.DeleteExternalAuthProvider(ctx, id)
+	m.queryLatencies.WithLabelValues("DeleteExternalAuthProvider").Observe(time.Since(start).Seconds())
 	return r0
 }
 
@@ -571,6 +620,27 @@ func (m queryMetricsStore) DeleteWorkspaceAgentPortSharesByTemplate(ctx context.
 	return r0
 }
 
+func (m queryMetricsStore) DeleteWorkspaceCollaborator(ctx context.Context, id uuid.UUID) error {
+	start := time.Now()
+	r0 := m.s.DeleteWorkspaceCollaborator(ctx, id)
+	m.queryLatencies.WithLabelValues("DeleteWorkspaceCollaborator").Observe(time.Since(start).Seconds())
+	return r0
+}
+
+func (m queryMetricsStore) DeleteWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg database.DeleteWorkspaceCollaboratorByUserAndWorkspaceParams) error {
+	start := time.Now()
+	r0 := m.s.DeleteWorkspaceCollaboratorByUserAndWorkspace(ctx, arg)
+	m.queryLatencies.WithLabelValues("DeleteWorkspaceCollaboratorByUserAndWorkspace").Observe(time.Since(start).Seconds())
+	return r0
+}
+
+func (m queryMetricsStore) DeleteWorkspaceInvitation(ctx context.Context, id uuid.UUID) error {
+	start := time.Now()
+	r0 := m.s.DeleteWorkspaceInvitation(ctx, id)
+	m.queryLatencies.WithLabelValues("DeleteWorkspaceInvitation").Observe(time.Since(start).Seconds())
+	return r0
+}
+
 func (m queryMetricsStore) DeleteWorkspaceSubAgentByID(ctx context.Context, id uuid.UUID) error {
 	start := time.Now()
 	r0 := m.s.DeleteWorkspaceSubAgentByID(ctx, id)
@@ -596,6 +666,13 @@ func (m queryMetricsStore) ExpirePrebuildsAPIKeys(ctx context.Context, now time.
 	start := time.Now()
 	r0 := m.s.ExpirePrebuildsAPIKeys(ctx, now)
 	m.queryLatencies.WithLabelValues("ExpirePrebuildsAPIKeys").Observe(time.Since(start).Seconds())
+	return r0
+}
+
+func (m queryMetricsStore) ExpireWorkspaceInvitations(ctx context.Context) error {
+	start := time.Now()
+	r0 := m.s.ExpireWorkspaceInvitations(ctx)
+	m.queryLatencies.WithLabelValues("ExpireWorkspaceInvitations").Observe(time.Since(start).Seconds())
 	return r0
 }
 
@@ -918,6 +995,27 @@ func (m queryMetricsStore) GetExternalAuthLinksByUserID(ctx context.Context, use
 	start := time.Now()
 	r0, r1 := m.s.GetExternalAuthLinksByUserID(ctx, userID)
 	m.queryLatencies.WithLabelValues("GetExternalAuthLinksByUserID").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
+func (m queryMetricsStore) GetExternalAuthManifestState(ctx context.Context, state string) (database.DBExternalAuthManifestState, error) {
+	start := time.Now()
+	r0, r1 := m.s.GetExternalAuthManifestState(ctx, state)
+	m.queryLatencies.WithLabelValues("GetExternalAuthManifestState").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
+func (m queryMetricsStore) GetExternalAuthProviderByID(ctx context.Context, id string) (database.DBExternalAuthProvider, error) {
+	start := time.Now()
+	r0, r1 := m.s.GetExternalAuthProviderByID(ctx, id)
+	m.queryLatencies.WithLabelValues("GetExternalAuthProviderByID").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
+func (m queryMetricsStore) GetExternalAuthProviders(ctx context.Context) ([]database.DBExternalAuthProvider, error) {
+	start := time.Now()
+	r0, r1 := m.s.GetExternalAuthProviders(ctx)
+	m.queryLatencies.WithLabelValues("GetExternalAuthProviders").Observe(time.Since(start).Seconds())
 	return r0, r1
 }
 
@@ -1283,6 +1381,13 @@ func (m queryMetricsStore) GetParameterSchemasByJobID(ctx context.Context, jobID
 	schemas, err := m.s.GetParameterSchemasByJobID(ctx, jobID)
 	m.queryLatencies.WithLabelValues("GetParameterSchemasByJobID").Observe(time.Since(start).Seconds())
 	return schemas, err
+}
+
+func (m queryMetricsStore) GetPendingWorkspaceInvitationsByEmail(ctx context.Context, email string) ([]database.WorkspaceInvitation, error) {
+	start := time.Now()
+	r0, r1 := m.s.GetPendingWorkspaceInvitationsByEmail(ctx, email)
+	m.queryLatencies.WithLabelValues("GetPendingWorkspaceInvitationsByEmail").Observe(time.Since(start).Seconds())
+	return r0, r1
 }
 
 func (m queryMetricsStore) GetPrebuildMetrics(ctx context.Context) ([]database.GetPrebuildMetricsRow, error) {
@@ -2195,6 +2300,55 @@ func (m queryMetricsStore) GetWorkspaceByWorkspaceAppID(ctx context.Context, wor
 	return workspace, err
 }
 
+func (m queryMetricsStore) GetWorkspaceCollaborationsByUserID(ctx context.Context, userID uuid.UUID) ([]database.WorkspaceCollaborator, error) {
+	start := time.Now()
+	r0, r1 := m.s.GetWorkspaceCollaborationsByUserID(ctx, userID)
+	m.queryLatencies.WithLabelValues("GetWorkspaceCollaborationsByUserID").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
+func (m queryMetricsStore) GetWorkspaceCollaboratorByID(ctx context.Context, id uuid.UUID) (database.WorkspaceCollaborator, error) {
+	start := time.Now()
+	r0, r1 := m.s.GetWorkspaceCollaboratorByID(ctx, id)
+	m.queryLatencies.WithLabelValues("GetWorkspaceCollaboratorByID").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
+func (m queryMetricsStore) GetWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg database.GetWorkspaceCollaboratorByUserAndWorkspaceParams) (database.WorkspaceCollaborator, error) {
+	start := time.Now()
+	r0, r1 := m.s.GetWorkspaceCollaboratorByUserAndWorkspace(ctx, arg)
+	m.queryLatencies.WithLabelValues("GetWorkspaceCollaboratorByUserAndWorkspace").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
+func (m queryMetricsStore) GetWorkspaceCollaboratorsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]database.WorkspaceCollaborator, error) {
+	start := time.Now()
+	r0, r1 := m.s.GetWorkspaceCollaboratorsByWorkspaceID(ctx, workspaceID)
+	m.queryLatencies.WithLabelValues("GetWorkspaceCollaboratorsByWorkspaceID").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
+func (m queryMetricsStore) GetWorkspaceInvitationByID(ctx context.Context, id uuid.UUID) (database.WorkspaceInvitation, error) {
+	start := time.Now()
+	r0, r1 := m.s.GetWorkspaceInvitationByID(ctx, id)
+	m.queryLatencies.WithLabelValues("GetWorkspaceInvitationByID").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
+func (m queryMetricsStore) GetWorkspaceInvitationByToken(ctx context.Context, token string) (database.WorkspaceInvitation, error) {
+	start := time.Now()
+	r0, r1 := m.s.GetWorkspaceInvitationByToken(ctx, token)
+	m.queryLatencies.WithLabelValues("GetWorkspaceInvitationByToken").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
+func (m queryMetricsStore) GetWorkspaceInvitationsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]database.WorkspaceInvitation, error) {
+	start := time.Now()
+	r0, r1 := m.s.GetWorkspaceInvitationsByWorkspaceID(ctx, workspaceID)
+	m.queryLatencies.WithLabelValues("GetWorkspaceInvitationsByWorkspaceID").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
 func (m queryMetricsStore) GetWorkspaceModulesByJobID(ctx context.Context, jobID uuid.UUID) ([]database.WorkspaceModule, error) {
 	start := time.Now()
 	r0, r1 := m.s.GetWorkspaceModulesByJobID(ctx, jobID)
@@ -2410,6 +2564,20 @@ func (m queryMetricsStore) InsertExternalAuthLink(ctx context.Context, arg datab
 	link, err := m.s.InsertExternalAuthLink(ctx, arg)
 	m.queryLatencies.WithLabelValues("InsertExternalAuthLink").Observe(time.Since(start).Seconds())
 	return link, err
+}
+
+func (m queryMetricsStore) InsertExternalAuthManifestState(ctx context.Context, arg database.InsertExternalAuthManifestStateParams) (database.DBExternalAuthManifestState, error) {
+	start := time.Now()
+	r0, r1 := m.s.InsertExternalAuthManifestState(ctx, arg)
+	m.queryLatencies.WithLabelValues("InsertExternalAuthManifestState").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
+func (m queryMetricsStore) InsertExternalAuthProvider(ctx context.Context, arg database.InsertExternalAuthProviderParams) (database.DBExternalAuthProvider, error) {
+	start := time.Now()
+	r0, r1 := m.s.InsertExternalAuthProvider(ctx, arg)
+	m.queryLatencies.WithLabelValues("InsertExternalAuthProvider").Observe(time.Since(start).Seconds())
+	return r0, r1
 }
 
 func (m queryMetricsStore) InsertFile(ctx context.Context, arg database.InsertFileParams) (database.File, error) {
@@ -3007,6 +3175,13 @@ func (m queryMetricsStore) UpdateExternalAuthLinkRefreshToken(ctx context.Contex
 	return r0
 }
 
+func (m queryMetricsStore) UpdateExternalAuthProvider(ctx context.Context, arg database.UpdateExternalAuthProviderParams) (database.DBExternalAuthProvider, error) {
+	start := time.Now()
+	r0, r1 := m.s.UpdateExternalAuthProvider(ctx, arg)
+	m.queryLatencies.WithLabelValues("UpdateExternalAuthProvider").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
 func (m queryMetricsStore) UpdateGitSSHKey(ctx context.Context, arg database.UpdateGitSSHKeyParams) (database.GitSSHKey, error) {
 	start := time.Now()
 	key, err := m.s.UpdateGitSSHKey(ctx, arg)
@@ -3497,6 +3672,13 @@ func (m queryMetricsStore) UpdateWorkspaceBuildProvisionerStateByID(ctx context.
 	return r0
 }
 
+func (m queryMetricsStore) UpdateWorkspaceCollaboratorAccessLevel(ctx context.Context, arg database.UpdateWorkspaceCollaboratorAccessLevelParams) (database.WorkspaceCollaborator, error) {
+	start := time.Now()
+	r0, r1 := m.s.UpdateWorkspaceCollaboratorAccessLevel(ctx, arg)
+	m.queryLatencies.WithLabelValues("UpdateWorkspaceCollaboratorAccessLevel").Observe(time.Since(start).Seconds())
+	return r0, r1
+}
+
 func (m queryMetricsStore) UpdateWorkspaceDeletedByID(ctx context.Context, arg database.UpdateWorkspaceDeletedByIDParams) error {
 	start := time.Now()
 	err := m.s.UpdateWorkspaceDeletedByID(ctx, arg)
@@ -3509,6 +3691,13 @@ func (m queryMetricsStore) UpdateWorkspaceDormantDeletingAt(ctx context.Context,
 	ws, r0 := m.s.UpdateWorkspaceDormantDeletingAt(ctx, arg)
 	m.queryLatencies.WithLabelValues("UpdateWorkspaceDormantDeletingAt").Observe(time.Since(start).Seconds())
 	return ws, r0
+}
+
+func (m queryMetricsStore) UpdateWorkspaceInvitationStatus(ctx context.Context, arg database.UpdateWorkspaceInvitationStatusParams) (database.WorkspaceInvitation, error) {
+	start := time.Now()
+	r0, r1 := m.s.UpdateWorkspaceInvitationStatus(ctx, arg)
+	m.queryLatencies.WithLabelValues("UpdateWorkspaceInvitationStatus").Observe(time.Since(start).Seconds())
+	return r0, r1
 }
 
 func (m queryMetricsStore) UpdateWorkspaceLastUsedAt(ctx context.Context, arg database.UpdateWorkspaceLastUsedAtParams) error {
