@@ -79,10 +79,11 @@ jobs:
           mkdir -p build
           VERSION="${{ steps.version.outputs.version }}"
 
-          # Build AGPL (open source) version with version ldflags and appropriate tags
+          # Build AGPL (open source) server version with version ldflags
+          # Note: NOT using slim tag - we need full server support
           go build -o "build/coder_${{ matrix.os }}_${{ matrix.arch }}" \
             -ldflags "-s -w -X 'github.com/coder/coder/v2/buildinfo.tag=${VERSION}' -X 'github.com/coder/coder/v2/buildinfo.agpl=true'" \
-            -tags "slim,ts_omit_aws,ts_omit_bird,ts_omit_tap,ts_omit_kube" \
+            -tags "ts_omit_aws,ts_omit_bird,ts_omit_tap,ts_omit_kube" \
             ./cmd/coder
 
           echo "Built binary: build/coder_${{ matrix.os }}_${{ matrix.arch }}"
