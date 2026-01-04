@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to build (e.g., 2.29.1-codespace)'
+        description: 'Version to build (e.g., 2.29.1)'
         required: false
         default: ''
 
@@ -62,11 +62,9 @@ jobs:
           elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            # Use base coder version + -codespace suffix
-            # Strip any -devel+xxx suffix to get clean version
+            # Use base coder version, strip any -devel+xxx suffix
             RAW_VERSION=$(./scripts/version.sh)
-            BASE_VERSION="${RAW_VERSION%%-devel*}"
-            VERSION="${BASE_VERSION}-codespace"
+            VERSION="${RAW_VERSION%%-devel*}"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
@@ -116,10 +114,9 @@ jobs:
           elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            # Strip any -devel+xxx suffix to get clean version
+            # Use base coder version, strip any -devel+xxx suffix
             RAW_VERSION=$(./scripts/version.sh)
-            BASE_VERSION="${RAW_VERSION%%-devel*}"
-            VERSION="${BASE_VERSION}-codespace"
+            VERSION="${RAW_VERSION%%-devel*}"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building Docker image version: $VERSION"
