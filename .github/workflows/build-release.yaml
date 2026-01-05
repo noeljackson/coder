@@ -54,6 +54,17 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
       - name: Get version
         id: version
         run: |
@@ -73,6 +84,13 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
 
+      - name: Build frontend
+        run: |
+          cd site
+          pnpm install --frozen-lockfile
+          pnpm build
+          ls -la out/
+
       - name: Build Go binary
         env:
           GOOS: ${{ matrix.os }}
@@ -83,11 +101,10 @@ jobs:
           mkdir -p build
           VERSION="${{ steps.version.outputs.version }}"
 
-          # Build AGPL (open source) server version with version ldflags
-          # Note: NOT using slim tag - we need full server support
+          # Build full server with embedded frontend (embed tag) and version ldflags
           go build -o "build/coder_${{ matrix.os }}_${{ matrix.arch }}" \
             -ldflags "-s -w -X 'github.com/coder/coder/v2/buildinfo.tag=${VERSION}' -X 'github.com/coder/coder/v2/buildinfo.agpl=true'" \
-            -tags "ts_omit_aws,ts_omit_bird,ts_omit_tap,ts_omit_kube" \
+            -tags "embed,ts_omit_aws,ts_omit_bird,ts_omit_tap,ts_omit_kube" \
             ./cmd/coder
 
           echo "Built binary: build/coder_${{ matrix.os }}_${{ matrix.arch }}"
