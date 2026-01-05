@@ -62,9 +62,13 @@ jobs:
           elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            # Use base coder version, strip any -devel+xxx suffix
-            RAW_VERSION=$(./scripts/version.sh)
-            VERSION="${RAW_VERSION%%-devel*}"
+            # Get latest stable tag from upstream (exclude pre-releases)
+            LATEST_TAG=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]' --sort=-version:refname | grep -v -E '(alpha|beta|rc|pre)' | head -n 1)
+            if [[ -z "$LATEST_TAG" ]]; then
+              echo "ERROR: No stable version tags found"
+              exit 1
+            fi
+            VERSION="${LATEST_TAG#v}"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
@@ -107,6 +111,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch upstream tags
+        run: |
+          git remote add upstream https://github.com/coder/coder.git || true
+          git fetch upstream --tags --force
+
       - name: Get version
         id: version
         run: |
@@ -115,9 +124,13 @@ jobs:
           elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            # Use base coder version, strip any -devel+xxx suffix
-            RAW_VERSION=$(./scripts/version.sh)
-            VERSION="${RAW_VERSION%%-devel*}"
+            # Get latest stable tag from upstream (exclude pre-releases)
+            LATEST_TAG=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]' --sort=-version:refname | grep -v -E '(alpha|beta|rc|pre)' | head -n 1)
+            if [[ -z "$LATEST_TAG" ]]; then
+              echo "ERROR: No stable version tags found"
+              exit 1
+            fi
+            VERSION="${LATEST_TAG#v}"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building Docker image version: $VERSION"
