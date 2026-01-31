@@ -115,6 +115,25 @@ git pull origin branch-name
 
 Don't use `git push --force` unless explicitly requested.
 
+### Fork Maintenance
+
+This is a fork of [coder/coder](https://github.com/coder/coder). See `FORK.md` for documentation of our custom features.
+
+**When merging upstream:**
+- Always preserve our custom code during conflict resolution
+- Key files with fork customizations:
+  - `coderd/database/dbmetrics/querymetrics.go` - Keep `ExpireWorkspaceInvitations`
+  - `site/src/api/typesGenerated.ts` - Keep `UpdateWorkspaceCollaboratorRequest`
+  - `codersdk/workspaceinvitations.go` - Workspace invitation SDK
+  - `coderd/workspaceinvitations.go` - Workspace invitation handlers
+  - `coderd/email/resend.go` - Email integration
+  - `.github/workflows/build-release.yaml` - Custom CI/CD
+
+**When adding fork features:**
+- Update `FORK.md` to document new features, API endpoints, or configuration
+- Keep fork features isolated in dedicated files when possible
+- Add database tables to the schema section in `FORK.md`
+
 ### New Feature Checklist
 
 - [ ] Run `git pull` to ensure latest code
@@ -211,6 +230,10 @@ clear what the new test covers.
 @.claude/docs/DATABASE.md
 @.claude/docs/PR_STYLE_GUIDE.md
 @.claude/docs/DOCS_STYLE_GUIDE.md
+
+## Fork Documentation
+
+@FORK.md
 
 ## Local Configuration
 
