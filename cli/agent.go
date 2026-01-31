@@ -16,17 +16,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/xerrors"
 	"gopkg.in/natefinch/lumberjack.v2"
 
-	"github.com/prometheus/client_golang/prometheus"
-
-	"cdr.dev/slog"
-	"cdr.dev/slog/sloggers/sloghuman"
-	"cdr.dev/slog/sloggers/slogjson"
-	"cdr.dev/slog/sloggers/slogstackdriver"
-	"github.com/coder/serpent"
-
+	"cdr.dev/slog/v3"
+	"cdr.dev/slog/v3/sloggers/sloghuman"
+	"cdr.dev/slog/v3/sloggers/slogjson"
+	"cdr.dev/slog/v3/sloggers/slogstackdriver"
 	"github.com/coder/coder/v2/agent"
 	"github.com/coder/coder/v2/agent/agentcontainers"
 	"github.com/coder/coder/v2/agent/agentexec"
@@ -37,6 +34,7 @@ import (
 	"github.com/coder/coder/v2/cli/clilog"
 	"github.com/coder/coder/v2/codersdk"
 	"github.com/coder/coder/v2/codersdk/agentsdk"
+	"github.com/coder/serpent"
 )
 
 func workspaceAgent() *serpent.Command {
@@ -138,7 +136,7 @@ func workspaceAgent() *serpent.Command {
 				// to do this else we fork bomb ourselves.
 				//nolint:gocritic
 				args := append(os.Args, "--no-reap")
-				err := reaper.ForkReap(
+				exitCode, err := reaper.ForkReap(
 					reaper.WithExecArgs(args...),
 					reaper.WithCatchSignals(StopSignals...),
 				)
@@ -147,8 +145,8 @@ func workspaceAgent() *serpent.Command {
 					return xerrors.Errorf("fork reap: %w", err)
 				}
 
-				logger.Info(ctx, "reaper process exiting")
-				return nil
+				logger.Info(ctx, "reaper child process exited", slog.F("exit_code", exitCode))
+				return ExitError(exitCode, nil)
 			}
 
 			// Handle interrupt signals to allow for graceful shutdown,

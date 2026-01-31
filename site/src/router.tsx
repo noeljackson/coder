@@ -168,6 +168,12 @@ const ObservabilitySettingsPage = lazy(
 			"./pages/DeploymentSettingsPage/ObservabilitySettingsPage/ObservabilitySettingsPage"
 		),
 );
+const AIGovernanceSettingsPage = lazy(
+	() =>
+		import(
+			"./pages/DeploymentSettingsPage/AIGovernanceSettingsPage/AIGovernanceSettingsPage"
+		),
+);
 const ExternalAuthPage = lazy(
 	() => import("./pages/ExternalAuthPage/ExternalAuthPage"),
 );
@@ -498,6 +504,10 @@ export const router = createBrowserRouter(
 							<Route
 								path="observability"
 								element={<ObservabilitySettingsPage />}
+							/>
+							<Route
+								path="ai-governance"
+								element={<AIGovernanceSettingsPage />}
 							/>
 							<Route path="network" element={<NetworkSettingsPage />} />
 							<Route path="userauth" element={<UserAuthSettingsPage />} />

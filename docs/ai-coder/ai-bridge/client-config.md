@@ -4,7 +4,7 @@ Once AI Bridge is setup on your deployment, the AI coding tools used by your use
 
 ## Base URLs
 
-Most AI coding tools allow the "base URL" to be customized. In other words, when a request is made to OpenAI's API from your coding tool, the API endpoint such as [/v1/chat/completions](https://platform.openai.com/docs/api-reference/chat) will be appended to the configured base. Therefore, instead of the default base URL of "https://api.openai.com/v1", you'll need to set it to "https://coder.example.com/api/v2/aibridge/openai/v1".
+Most AI coding tools allow the "base URL" to be customized. In other words, when a request is made to OpenAI's API from your coding tool, the API endpoint such as [`/v1/chat/completions`](https://platform.openai.com/docs/api-reference/chat) will be appended to the configured base. Therefore, instead of the default base URL of `https://api.openai.com/v1`, you'll need to set it to `https://coder.example.com/api/v2/aibridge/openai/v1`.
 
 The exact configuration method varies by client — some use environment variables, others use configuration files or UI settings:
 
@@ -15,12 +15,26 @@ Replace `coder.example.com` with your actual Coder deployment URL.
 
 ## Authentication
 
-Instead of distributing provider-specific API keys (OpenAI/Anthropic keys) to users, they authenticate to AI Bridge using their **Coder session token** or **API key**:
+Instead of distributing provider-specific API keys (OpenAI/Anthropic keys) to users, they authenticate to AI Bridge using their **Coder session token** or **Coder API key**:
 
-- **OpenAI clients**: Users set `OPENAI_API_KEY` to their Coder session token or API key
-- **Anthropic clients**: Users set `ANTHROPIC_API_KEY` to their Coder session token or API key
+- **OpenAI clients**: Users set `OPENAI_API_KEY` to their Coder session token or Coder API key
+- **Anthropic clients**: Users set `ANTHROPIC_API_KEY` to their Coder session token or Coder API key
+
+> [!NOTE]
+> Only Coder-issued tokens are accepted at this time.
+> Provider-specific API keys (such as OpenAI or Anthropic keys) will not work with AI Bridge.
 
 Again, the exact environment variable or setting naming may differ from tool to tool; consult your tool's documentation.
+
+### Retrieving your session token
+
+If you're logged in with the Coder CLI, you can retrieve your current session
+token using [`coder login token`](../../reference/cli/login_token.md):
+
+```sh
+export ANTHROPIC_API_KEY=$(coder login token)
+export ANTHROPIC_BASE_URL="https://coder.example.com/api/v2/aibridge/anthropic"
+```
 
 ## Configuring In-Workspace Tools
 
@@ -116,7 +130,7 @@ The table below shows tested AI clients and their compatibility with AI Bridge. 
 | Sourcegraph Amp                                                                                                                     | ❌              | ❌                 | No option to override the base URL.                                                                                                                                                                                                                       |
 | Kiro                                                                                                                                | ❌              | ❌                 | No option to override the base URL.                                                                                                                                                                                                                       |
 | [Copilot CLI](https://github.com/github/copilot-cli/issues/104)                                                                     | ❌              | ❌                 | No support for custom base URLs and uses a `GITHUB_TOKEN` for authentication.                                                                                                                                                                             |
-| [Kilo Code](https://kilocode.ai/docs/features/api-configuration-profiles#creating-and-managing-profiles)                            | ✅              | ✅                 | Similar to Roo Code.                                                                                                                                                                                                                                      |
+| [Kilo Code](https://kilocode.ai/docs/ai-providers/openai-compatible)                                                                | ✅              | ✅                 | Similar to Roo Code.                                                                                                                                                                                                                                      |
 | Gemini CLI                                                                                                                          | ❌              | ❌                 | Not supported yet.                                                                                                                                                                                                                                        |
 | [Amazon Q CLI](https://aws.amazon.com/q/)                                                                                           | ❌              | ❌                 | Limited to Amazon Q subscriptions; no custom endpoint support.                                                                                                                                                                                            |
 

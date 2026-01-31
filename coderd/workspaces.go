@@ -17,8 +17,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/xerrors"
 
-	"cdr.dev/slog"
-
+	"cdr.dev/slog/v3"
 	"github.com/coder/coder/v2/agent/proto"
 	"github.com/coder/coder/v2/coderd/audit"
 	"github.com/coder/coder/v2/coderd/database"
@@ -757,7 +756,7 @@ func createWorkspace(
 			if err != nil {
 				isExpectedError := errors.Is(err, prebuilds.ErrNoClaimablePrebuiltWorkspaces) ||
 					errors.Is(err, prebuilds.ErrAGPLDoesNotSupportPrebuiltWorkspaces)
-				fields := []any{
+				fields := []slog.Field{
 					slog.Error(err),
 					slog.F("workspace_name", req.Name),
 					slog.F("template_version_preset_id", templateVersionPresetID),
@@ -2069,7 +2068,7 @@ func (api *API) watchWorkspaceSSE(rw http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} codersdk.ServerSentEvent
 // @Router /workspaces/{workspace}/watch-ws [get]
 func (api *API) watchWorkspaceWS(rw http.ResponseWriter, r *http.Request) {
-	api.watchWorkspace(rw, r, httpapi.OneWayWebSocketEventSender)
+	api.watchWorkspace(rw, r, httpapi.OneWayWebSocketEventSender(api.Logger))
 }
 
 func (api *API) watchWorkspace(
@@ -2385,8 +2384,20 @@ func (api *API) patchWorkspaceACL(rw http.ResponseWriter, r *http.Request) {
 	defer commitAudit()
 	aReq.Old = workspace.WorkspaceTable()
 
+	if !api.allowWorkspaceSharing(ctx, rw, workspace.OrganizationID) {
+		return
+	}
+
 	var req codersdk.UpdateWorkspaceACL
 	if !httpapi.Read(ctx, rw, r, &req) {
+		return
+	}
+
+	apiKey := httpmw.APIKey(r)
+	if _, ok := req.UserRoles[apiKey.UserID.String()]; ok {
+		httpapi.Write(ctx, rw, http.StatusBadRequest, codersdk.Response{
+			Message: "You cannot change your own workspace sharing role.",
+		})
 		return
 	}
 
@@ -2481,6 +2492,10 @@ func (api *API) deleteWorkspaceACL(rw http.ResponseWriter, r *http.Request) {
 	defer commitAuditor()
 	aReq.Old = workspace.WorkspaceTable()
 
+	if !api.allowWorkspaceSharing(ctx, rw, workspace.OrganizationID) {
+		return
+	}
+
 	err := api.Database.InTx(func(tx database.Store) error {
 		err := tx.DeleteWorkspaceACLByID(ctx, workspace.ID)
 		if err != nil {
@@ -2502,6 +2517,27 @@ func (api *API) deleteWorkspaceACL(rw http.ResponseWriter, r *http.Request) {
 	aReq.New = workspace.WorkspaceTable()
 
 	httpapi.Write(ctx, rw, http.StatusNoContent, nil)
+}
+
+// allowWorkspaceSharing enforces the workspace-sharing gate for an
+// organization. It writes an HTTP error response and returns false if
+// sharing is disabled or the org lookup fails; otherwise it returns
+// true.
+func (api *API) allowWorkspaceSharing(ctx context.Context, rw http.ResponseWriter, organizationID uuid.UUID) bool {
+	//nolint:gocritic // Use system context so this check doesn’t
+	// depend on the caller having organization:read.
+	org, err := api.Database.GetOrganizationByID(dbauthz.AsSystemRestricted(ctx), organizationID)
+	if err != nil {
+		httpapi.InternalServerError(rw, err)
+		return false
+	}
+	if org.WorkspaceSharingDisabled {
+		httpapi.Write(ctx, rw, http.StatusForbidden, codersdk.Response{
+			Message: "Workspace sharing is disabled for this organization.",
+		})
+		return false
+	}
+	return true
 }
 
 // workspacesData only returns the data the caller can access. If the caller

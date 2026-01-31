@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/xerrors"
 
-	"cdr.dev/slog"
+	"cdr.dev/slog/v3"
 	"github.com/coder/coder/v2/coderd/database"
 	"github.com/coder/coder/v2/coderd/database/db2sdk"
 	"github.com/coder/coder/v2/coderd/database/dbauthz"
@@ -544,7 +544,7 @@ func (f *logFollower) follow() {
 		return
 	}
 	defer f.conn.Close(websocket.StatusNormalClosure, "done")
-	go httpapi.Heartbeat(f.ctx, f.conn)
+	go httpapi.HeartbeatClose(f.ctx, f.logger, cancel, f.conn)
 	f.enc = wsjson.NewEncoder[codersdk.ProvisionerJobLog](f.conn, websocket.MessageText)
 
 	// query for logs once right away, so we can get historical data from before

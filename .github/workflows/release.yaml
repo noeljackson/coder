@@ -65,7 +65,7 @@ jobs:
     steps:
       # Harden Runner doesn't work on macOS.
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -121,7 +121,7 @@ jobs:
       - name: Build dylibs
         run: |
           set -euxo pipefail
-          go mod download
+          ./.github/scripts/retry.sh -- go mod download
 
           make gen/mark-fresh
           make build/coder-dylib
@@ -169,7 +169,7 @@ jobs:
           egress-policy: audit
 
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -259,7 +259,7 @@ jobs:
           java-version: "11.0"
 
       - name: Install go-winres
-        run: go install github.com/tc-hib/go-winres@d743268d7ea168077ddd443c4240562d4f5e8c3e # v0.3.3
+        run: ./.github/scripts/retry.sh -- go install github.com/tc-hib/go-winres@d743268d7ea168077ddd443c4240562d4f5e8c3e # v0.3.3
 
       - name: Install nsis and zstd
         run: sudo apt-get install -y nsis zstd
@@ -341,7 +341,7 @@ jobs:
       - name: Build binaries
         run: |
           set -euo pipefail
-          go mod download
+          ./.github/scripts/retry.sh -- go mod download
 
           version="$(./scripts/version.sh)"
           make gen/mark-fresh
@@ -888,7 +888,7 @@ jobs:
           GH_TOKEN: ${{ secrets.CDRCI_GITHUB_TOKEN }}
 
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -976,7 +976,7 @@ jobs:
           egress-policy: audit
 
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
           persist-credentials: false
