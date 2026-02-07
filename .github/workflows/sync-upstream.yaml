@@ -1,0 +1,130 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    # Daily at 06:00 UTC.
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          # Use the default GITHUB_TOKEN; it has contents:write on this repo.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/coder/coder.git || true
+          git fetch upstream main
+
+      - name: Check for new commits
+        id: check
+        run: |
+          LOCAL=$(git rev-parse HEAD)
+          UPSTREAM=$(git rev-parse upstream/main)
+          MERGE_BASE=$(git merge-base HEAD upstream/main)
+
+          if [ "$MERGE_BASE" = "$UPSTREAM" ]; then
+            echo "Already up to date with upstream."
+            echo "has_updates=false" >> "$GITHUB_OUTPUT"
+          else
+            COUNT=$(git rev-list HEAD..upstream/main --count)
+            echo "Upstream has $COUNT new commit(s)."
+            echo "has_updates=true" >> "$GITHUB_OUTPUT"
+            echo "commit_count=$COUNT" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Attempt merge
+        if: steps.check.outputs.has_updates == 'true'
+        id: merge
+        run: |
+          if git merge upstream/main --no-edit; then
+            echo "Merge succeeded without conflicts."
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Merge has conflicts."
+            git merge --abort
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push clean merge
+        if: steps.check.outputs.has_updates == 'true' && steps.merge.outputs.conflict == 'false'
+        run: git push origin main
+
+      - name: Create conflict PR
+        if: steps.check.outputs.has_updates == 'true' && steps.merge.outputs.conflict == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          BRANCH="sync/upstream-${DATE}"
+
+          # Create a branch from current main, merge with conflict markers.
+          git checkout -b "$BRANCH"
+          git merge upstream/main --no-edit || true
+
+          # List conflicting files.
+          CONFLICTS=$(git diff --name-only --diff-filter=U)
+
+          # Commit the conflict state so it can be resolved in the PR.
+          git add -A
+          git commit -m "chore: merge upstream/main (conflicts on ${DATE})" --no-verify || true
+          git push origin "$BRANCH"
+
+          BODY=$(cat <<EOF
+          ## Upstream sync — ${DATE}
+
+          Automatic merge of \`upstream/main\` into \`main\` failed due to
+          conflicts. Please resolve them manually and merge this PR.
+
+          **Conflicting files:**
+          \`\`\`
+          ${CONFLICTS}
+          \`\`\`
+
+          **Steps to resolve locally:**
+          \`\`\`bash
+          git fetch origin ${BRANCH}
+          git checkout ${BRANCH}
+          # Resolve conflicts in the files listed above, then:
+          git add .
+          git commit
+          git push origin ${BRANCH}
+          \`\`\`
+          EOF
+          )
+
+          gh pr create \
+            --title "chore: sync upstream/main (${DATE})" \
+            --body "$BODY" \
+            --base main \
+            --head "$BRANCH" \
+            || true
+
+      - name: Summary
+        if: steps.check.outputs.has_updates == 'true'
+        run: |
+          if [ "${{ steps.merge.outputs.conflict }}" = "false" ]; then
+            echo "### Upstream sync succeeded" >> "$GITHUB_STEP_SUMMARY"
+            echo "Merged ${{ steps.check.outputs.commit_count }} commit(s) from upstream/main." >> "$GITHUB_STEP_SUMMARY"
+            echo "The build-release workflow will run automatically." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Upstream sync has conflicts" >> "$GITHUB_STEP_SUMMARY"
+            echo "A PR has been created for manual conflict resolution." >> "$GITHUB_STEP_SUMMARY"
+          fi

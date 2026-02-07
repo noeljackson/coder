@@ -18,19 +18,19 @@ Share workspaces with other users via email invitations.
 
 **API Endpoints:**
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v2/workspaces/{id}/invitations` | POST | Create invitation |
-| `/api/v2/workspaces/{id}/invitations` | GET | List invitations |
-| `/api/v2/workspaces/{id}/invitations/{id}` | DELETE | Cancel invitation |
-| `/api/v2/invitations/{token}` | GET | Get invitation by token |
-| `/api/v2/invitations/{token}/accept` | POST | Accept invitation |
-| `/api/v2/invitations/{token}/decline` | POST | Decline invitation |
-| `/api/v2/workspaces/{id}/collaborators` | GET | List collaborators |
-| `/api/v2/workspaces/{id}/collaborators/{id}` | PATCH | Update access level |
-| `/api/v2/workspaces/{id}/collaborators/{id}` | DELETE | Remove collaborator |
-| `/api/v2/users/me/workspace-collaborations` | GET | My collaborations |
-| `/api/v2/users/me/workspace-invitations` | GET | My pending invitations |
+| Endpoint                                     | Method | Description             |
+|----------------------------------------------|--------|-------------------------|
+| `/api/v2/workspaces/{id}/invitations`        | POST   | Create invitation       |
+| `/api/v2/workspaces/{id}/invitations`        | GET    | List invitations        |
+| `/api/v2/workspaces/{id}/invitations/{id}`   | DELETE | Cancel invitation       |
+| `/api/v2/invitations/{token}`                | GET    | Get invitation by token |
+| `/api/v2/invitations/{token}/accept`         | POST   | Accept invitation       |
+| `/api/v2/invitations/{token}/decline`        | POST   | Decline invitation      |
+| `/api/v2/workspaces/{id}/collaborators`      | GET    | List collaborators      |
+| `/api/v2/workspaces/{id}/collaborators/{id}` | PATCH  | Update access level     |
+| `/api/v2/workspaces/{id}/collaborators/{id}` | DELETE | Remove collaborator     |
+| `/api/v2/users/me/workspace-collaborations`  | GET    | My collaborations       |
+| `/api/v2/users/me/workspace-invitations`     | GET    | My pending invitations  |
 
 **Files:**
 - `codersdk/workspaceinvitations.go` - SDK types and client methods
@@ -54,6 +54,24 @@ Sends workspace invitation emails via [Resend](https://resend.com).
 
 ## CI/CD
 
+### Automated Upstream Sync
+
+A daily GitHub Action keeps the fork up to date with upstream.
+
+**How it works:**
+1. Runs daily at 06:00 UTC (also supports manual trigger)
+2. Fetches `upstream/main` and checks for new commits
+3. If no new commits, exits early
+4. Attempts `git merge upstream/main`
+   - **Clean merge:** pushes to `main`, which triggers the Docker build
+   - **Conflicts:** creates a PR on a `sync/upstream-YYYY-MM-DD` branch
+     with the conflicting files listed for manual resolution
+
+**Manual trigger:** Go to Actions > "Sync Upstream" > "Run workflow".
+
+**Files:**
+- `.github/workflows/sync-upstream.yaml`
+
 ### Docker Build Workflow
 
 Custom GitHub Actions workflow for multi-arch Docker builds.
@@ -66,23 +84,41 @@ Custom GitHub Actions workflow for multi-arch Docker builds.
 - Alpine-based image with Terraform pre-installed
 
 **Trigger:**
-- Push to `main` branch
+- Push to `main` branch (including automated sync merges)
 - Manual dispatch with optional version override
 
 **Files:**
 - `.github/workflows/build-release.yaml`
 
+### Full Pipeline
+
+Upstream change → daily sync auto-merges → push to `main` → Docker build → `ghcr.io/noeljackson/coder:latest`
+
+If the sync has conflicts, a PR is created instead and the build waits until
+you merge that PR.
+
 ## Keeping Updated
 
-Sync with upstream periodically:
+### Automated (default)
+
+The sync-upstream workflow handles this automatically. When conflicts occur,
+you'll see a PR with instructions:
 
 ```bash
-# Fetch upstream
+git fetch origin sync/upstream-YYYY-MM-DD
+git checkout sync/upstream-YYYY-MM-DD
+# Resolve conflicts, preserving fork customizations
+git add .
+git commit
+git push origin sync/upstream-YYYY-MM-DD
+# Then merge the PR on GitHub
+```
+
+### Manual (fallback)
+
+```bash
 git fetch upstream
-
-# Merge upstream changes
 git merge upstream/main
-
 # Resolve conflicts (preserve fork customizations)
 git push origin main
 ```
@@ -97,29 +133,29 @@ This fork adds two tables:
 
 ### workspace_invitations
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| workspace_id | UUID | Target workspace |
-| inviter_id | UUID | User who sent invitation |
-| email | TEXT | Invitee email |
-| access_level | TEXT | readonly/use/admin |
-| token | TEXT | Unique acceptance token |
-| status | TEXT | pending/accepted/declined/expired/canceled |
-| expires_at | TIMESTAMP | Expiration time |
-| created_at | TIMESTAMP | Creation time |
-| responded_at | TIMESTAMP | Response time (nullable) |
+| Column       | Type      | Description                                |
+|--------------|-----------|--------------------------------------------|
+| id           | UUID      | Primary key                                |
+| workspace_id | UUID      | Target workspace                           |
+| inviter_id   | UUID      | User who sent invitation                   |
+| email        | TEXT      | Invitee email                              |
+| access_level | TEXT      | readonly/use/admin                         |
+| token        | TEXT      | Unique acceptance token                    |
+| status       | TEXT      | pending/accepted/declined/expired/canceled |
+| expires_at   | TIMESTAMP | Expiration time                            |
+| created_at   | TIMESTAMP | Creation time                              |
+| responded_at | TIMESTAMP | Response time (nullable)                   |
 
 ### workspace_collaborators
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| workspace_id | UUID | Target workspace |
-| user_id | UUID | Collaborator user |
-| access_level | TEXT | readonly/use/admin |
-| invited_by | UUID | Who added them (nullable) |
-| created_at | TIMESTAMP | Creation time |
+| Column       | Type      | Description               |
+|--------------|-----------|---------------------------|
+| id           | UUID      | Primary key               |
+| workspace_id | UUID      | Target workspace          |
+| user_id      | UUID      | Collaborator user         |
+| access_level | TEXT      | readonly/use/admin        |
+| invited_by   | UUID      | Who added them (nullable) |
+| created_at   | TIMESTAMP | Creation time             |
 
 ## Development
 
