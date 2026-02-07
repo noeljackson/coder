@@ -9,7 +9,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  workflows: write
 
 jobs:
   sync:
@@ -21,8 +20,9 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-          # Use the default GITHUB_TOKEN; it has contents:write on this repo.
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # A PAT is required because upstream merges include workflow
+          # file changes, and GITHUB_TOKEN cannot push those.
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Configure git
         run: |
@@ -71,7 +71,7 @@ jobs:
       - name: Create conflict PR
         if: steps.check.outputs.has_updates == 'true' && steps.merge.outputs.conflict == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           DATE=$(date +%Y-%m-%d)
           BRANCH="sync/upstream-${DATE}"
