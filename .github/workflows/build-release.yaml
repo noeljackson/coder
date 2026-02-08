@@ -270,3 +270,20 @@ jobs:
         run: |
           echo "Pushed images:"
           echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n'
+
+      - name: Package Helm chart
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          # OCI tags cannot contain '+', replace with '-' for devel builds
+          HELM_VERSION="${VERSION//+/-}"
+          ./scripts/helm.sh \
+            --version "$HELM_VERSION" \
+            --chart coder \
+            --output build/
+
+      - name: Push Helm chart to GHCR
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          HELM_VERSION="${VERSION//+/-}"
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+          helm push "build/coder_helm_${HELM_VERSION}.tgz" oci://ghcr.io/noeljackson/chart
