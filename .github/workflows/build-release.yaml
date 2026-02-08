@@ -88,6 +88,49 @@ jobs:
           pnpm build
           ls -la out/
 
+      - name: Build slim agent binaries
+        env:
+          CGO_ENABLED: "0"
+          GOPROXY: "https://proxy.golang.org,direct"
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p site/out/bin
+
+          # Build slim (agent) binaries for all platforms.
+          # The fat server binary (built with -tags embed) expects
+          # these in site/out/bin/ so it can serve them at /bin/*.
+          for os_arch in linux_amd64 linux_arm64 linux_armv7 darwin_amd64 darwin_arm64 windows_amd64 windows_arm64; do
+            os="${os_arch%%_*}"
+            arch_raw="${os_arch#*_}"
+            arch="${arch_raw%v*}"
+            ext=""
+            goarm=""
+
+            if [[ "$arch_raw" == "armv7" ]]; then
+              arch="arm"
+              goarm="7"
+            fi
+            if [[ "$os" == "windows" ]]; then
+              ext=".exe"
+            fi
+
+            echo "Building slim binary: ${os}/${arch_raw}"
+            GOOS="$os" GOARCH="$arch" GOARM="$goarm" \
+              go build -o "site/out/bin/coder-${os}-${arch_raw}${ext}" \
+              -ldflags "-s -w -X 'github.com/coder/coder/v2/buildinfo.tag=${VERSION}'" \
+              -tags "slim,ts_omit_aws,ts_omit_bird,ts_omit_tap,ts_omit_kube" \
+              ./cmd/coder
+          done
+
+          # Create sha1 checksums and compressed archive required by embed.
+          pushd site/out/bin
+            openssl dgst -r -sha1 coder-* | tee coder.sha1
+          popd
+          tar cf - -C site/out/bin $(ls site/out/bin/) | zstd -T0 -6 > site/out/bin/coder.tar.zst
+
+          echo "Slim binaries:"
+          ls -la site/out/bin/
+
       - name: Build Go binary
         env:
           GOOS: ${{ matrix.os }}
