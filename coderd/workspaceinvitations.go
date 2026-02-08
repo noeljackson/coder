@@ -13,6 +13,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
+	"cdr.dev/slog/v3"
+
 	"github.com/coder/coder/v2/coderd/database"
 	"github.com/coder/coder/v2/coderd/database/dbtime"
 	"github.com/coder/coder/v2/coderd/email"
@@ -117,9 +119,9 @@ func (api *API) createWorkspaceInvitation(rw http.ResponseWriter, r *http.Reques
 		if err != nil {
 			// Log the error but don't fail the request
 			api.Logger.Warn(ctx, "failed to send invitation email",
-				"error", err,
-				"email", req.Email,
-				"workspace", workspace.Name,
+				slog.Error(err),
+				slog.F("email", req.Email),
+				slog.F("workspace", workspace.Name),
 			)
 		}
 	}
@@ -361,7 +363,7 @@ func (api *API) acceptWorkspaceInvitation(rw http.ResponseWriter, r *http.Reques
 	})
 	if err != nil {
 		// Log but don't fail - collaborator was created
-		api.Logger.Warn(ctx, "failed to update invitation status", "error", err)
+		api.Logger.Warn(ctx, "failed to update invitation status", slog.Error(err))
 	}
 
 	result := convertWorkspaceCollaborator(collaborator)
