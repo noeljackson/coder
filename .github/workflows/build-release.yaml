@@ -202,14 +202,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Docker
+      - name: Extract metadata for Docker (version + SHA tags only, no latest)
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=${{ steps.version.outputs.version }}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,prefix=
 
       - name: Create Dockerfile
@@ -254,7 +253,7 @@ jobs:
           ENTRYPOINT [ "/opt/coder", "server" ]
           EOF
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (version + SHA tags)
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -268,7 +267,7 @@ jobs:
 
       - name: Print image info
         run: |
-          echo "Pushed images:"
+          echo "Pushed images (without latest):"
           echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n'
 
       - name: Package Helm chart
@@ -286,3 +285,12 @@ jobs:
           HELM_VERSION="${VERSION//+/-}"
           echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
           helm push "build/coder_helm_${HELM_VERSION}.tgz" oci://ghcr.io/noeljackson/chart
+
+      - name: Tag Docker image as latest (only after Helm chart is pushed)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          docker buildx imagetools create \
+            --tag "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" \
+            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          echo "Tagged ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION} as latest"
