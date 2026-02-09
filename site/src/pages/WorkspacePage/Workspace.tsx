@@ -157,7 +157,7 @@ export const Workspace: FC<WorkspaceProps> = ({
 					{sidebarOption.value === "history" && (
 						<HistorySidebar workspace={workspace} />
 					)}
-					</div>
+				</div>
 
 				<div
 					style={{

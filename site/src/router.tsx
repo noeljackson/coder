@@ -134,11 +134,6 @@ const ExternalAuthSettingsPage = lazy(
 			"./pages/DeploymentSettingsPage/ExternalAuthSettingsPage/ExternalAuthSettingsPage"
 		),
 );
-const GitHubAppCallbackPage = lazy(() =>
-	import(
-		"./pages/DeploymentSettingsPage/ExternalAuthSettingsPage/GitHubAppCallbackPage"
-	).then((m) => ({ default: m.GitHubAppCallbackPage })),
-);
 const OAuth2AppsSettingsPage = lazy(
 	() =>
 		import(
@@ -510,10 +505,6 @@ export const router = createBrowserRouter(
 							<Route
 								path="external-auth"
 								element={<ExternalAuthSettingsPage />}
-							/>
-							<Route
-								path="external-auth/github/callback"
-								element={<GitHubAppCallbackPage />}
 							/>
 
 							<Route

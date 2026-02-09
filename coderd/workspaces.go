@@ -589,8 +589,10 @@ func createWorkspace(
 		})
 	}
 
-	// Check workspace limits if configured
-	// Use system context for limit enforcement queries
+	// Check workspace limits if configured.
+	// Limit enforcement needs to count workspaces across the deployment,
+	// which the requesting user may not have permission to query directly.
+	//nolint:gocritic // Workspace limit checks require system-level read access.
 	systemCtx := dbauthz.AsSystemRestricted(ctx)
 
 	// Check per-user workspace limit

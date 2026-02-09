@@ -1159,34 +1159,6 @@ export interface ConvertLoginRequest {
 	readonly password: string;
 }
 
-// From codersdk/externalauth.go
-/**
- * CreateExternalAuthProviderRequest is used to create a new external auth provider.
- */
-export interface CreateExternalAuthProviderRequest {
-	readonly id: string;
-	readonly type: string;
-	readonly client_id: string;
-	readonly client_secret: string;
-	readonly display_name?: string;
-	readonly display_icon?: string;
-	readonly auth_url?: string;
-	readonly token_url?: string;
-	readonly validate_url?: string;
-	readonly scopes?: readonly string[];
-	readonly no_refresh: boolean;
-	readonly device_flow: boolean;
-	readonly regex?: string;
-	/**
-	 * GitHub App specific fields
-	 */
-	readonly app_install_url?: string;
-	readonly app_installations_url?: string;
-	readonly github_app_id?: number;
-	readonly github_app_webhook_secret?: string;
-	readonly github_app_private_key?: string;
-}
-
 // From codersdk/users.go
 export interface CreateFirstUserRequest {
 	readonly email: string;
@@ -2117,34 +2089,6 @@ export interface ExternalAuthLinkProvider {
 }
 
 // From codersdk/externalauth.go
-/**
- * ExternalAuthProviderConfig is a database-stored external auth provider configuration.
- * This is separate from the file-based configuration and supports runtime management.
- */
-export interface ExternalAuthProviderConfig {
-	readonly id: string;
-	readonly type: string;
-	readonly client_id: string;
-	readonly display_name?: string;
-	readonly display_icon?: string;
-	readonly auth_url?: string;
-	readonly token_url?: string;
-	readonly validate_url?: string;
-	readonly scopes?: readonly string[];
-	readonly no_refresh: boolean;
-	readonly device_flow: boolean;
-	readonly regex?: string;
-	readonly created_at: string;
-	readonly updated_at: string;
-	/**
-	 * GitHub App specific fields
-	 */
-	readonly app_install_url?: string;
-	readonly app_installations_url?: string;
-	readonly github_app_id?: number;
-}
-
-// From codersdk/externalauth.go
 export interface ExternalAuthUser {
 	readonly id: number;
 	readonly login: string;
@@ -2289,40 +2233,6 @@ export interface GetUserStatusCountsResponse {
 export interface GetUsersResponse {
 	readonly users: readonly User[];
 	readonly count: number;
-}
-
-// From codersdk/externalauth.go
-/**
- * GitHubAppManifestCallbackRequest is the callback from GitHub after app creation.
- */
-export interface GitHubAppManifestCallbackRequest {
-	readonly code: string;
-	readonly state: string;
-}
-
-// From codersdk/externalauth.go
-/**
- * GitHubAppManifestRequest is used to initiate the GitHub App manifest flow.
- */
-export interface GitHubAppManifestRequest {
-	/**
-	 * Owner is the organization or user to create the GitHub App for.
-	 * If empty, creates a personal app.
-	 */
-	readonly owner?: string;
-	readonly redirect_uri: string;
-}
-
-// From codersdk/externalauth.go
-/**
- * GitHubAppManifestResponse contains the URL to redirect the user to GitHub.
- */
-export interface GitHubAppManifestResponse {
-	/**
-	 * URL is the GitHub URL to redirect the user to for app creation.
-	 */
-	readonly url: string;
-	readonly state: string;
 }
 
 // From codersdk/gitsshkey.go
@@ -5667,19 +5577,6 @@ export interface UpdateCheckResponse {
 	 * URL to download the latest release of Coder.
 	 */
 	readonly url: string;
-}
-
-// From codersdk/externalauth.go
-/**
- * UpdateExternalAuthProviderRequest is used to update an external auth provider.
- */
-export interface UpdateExternalAuthProviderRequest {
-	readonly display_name?: string;
-	readonly display_icon?: string;
-	readonly scopes?: readonly string[];
-	readonly no_refresh?: boolean;
-	readonly device_flow?: boolean;
-	readonly regex?: string;
 }
 
 // From healthsdk/healthsdk.go
