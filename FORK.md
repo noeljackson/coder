@@ -78,7 +78,7 @@ Custom GitHub Actions workflow for multi-arch Docker builds.
 
 **Features:**
 - Builds linux/amd64 and linux/arm64
-- Auto-detects latest upstream stable version
+- Auto-detects version via `scripts/version.sh` (do not manually tag)
 - Publishes to `ghcr.io/noeljackson/coder`
 - Includes embedded frontend (full server binary)
 - Alpine-based image with Terraform pre-installed
@@ -90,9 +90,27 @@ Custom GitHub Actions workflow for multi-arch Docker builds.
 **Files:**
 - `.github/workflows/build-release.yaml`
 
+### Artifact Sync: Docker + Helm
+
+The `latest` Docker tag is only applied after both the Docker image and Helm
+chart are successfully pushed. This prevents a failure mode where the Codespace
+platform resolves a version that has a Docker image but no corresponding Helm
+chart, causing Terraform to fail with "Unable to locate chart."
+
+**How it works:**
+1. Docker image is pushed with version + SHA tags only (no `latest`)
+2. Helm chart is packaged and pushed to `oci://ghcr.io/noeljackson/chart`
+3. Only after the Helm chart push succeeds, the Docker image is retagged as
+   `latest` via `docker buildx imagetools create`
+
+If the Helm chart push fails, `latest` continues to point at the previous
+known-good version. The Codespace version resolver also validates chart
+existence server-side as a secondary safeguard.
+
 ### Full Pipeline
 
-Upstream change → daily sync auto-merges → push to `main` → Docker build → `ghcr.io/noeljackson/coder:latest`
+Upstream change → daily sync auto-merges → push to `main` → Docker build
+→ Helm chart push → `latest` tag applied → `ghcr.io/noeljackson/coder:latest`
 
 If the sync has conflicts, a PR is created instead and the build waits until
 you merge that PR.
