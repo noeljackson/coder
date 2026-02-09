@@ -2,7 +2,7 @@
 ALTER TYPE crypto_key_feature ADD VALUE IF NOT EXISTS 'external_auth';
 
 -- Table for dynamically created external auth providers (e.g., GitHub Apps via manifest)
-CREATE TABLE external_auth_providers (
+CREATE TABLE IF NOT EXISTS external_auth_providers (
     id TEXT PRIMARY KEY,
     type TEXT NOT NULL DEFAULT 'github',
     client_id TEXT NOT NULL,
@@ -36,7 +36,7 @@ COMMENT ON COLUMN external_auth_providers.client_secret_encrypted IS 'Encrypted 
 COMMENT ON COLUMN external_auth_providers.github_app_id IS 'GitHub App ID for GitHub Apps created via manifest';
 
 -- Table for tracking GitHub App manifest flow state
-CREATE TABLE external_auth_manifest_states (
+CREATE TABLE IF NOT EXISTS external_auth_manifest_states (
     state TEXT PRIMARY KEY,
     redirect_uri TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -46,4 +46,4 @@ CREATE TABLE external_auth_manifest_states (
 COMMENT ON TABLE external_auth_manifest_states IS 'Temporary state storage for GitHub App manifest creation flow';
 
 -- Index for cleaning up expired states
-CREATE INDEX idx_external_auth_manifest_states_expires_at ON external_auth_manifest_states(expires_at);
+CREATE INDEX IF NOT EXISTS idx_external_auth_manifest_states_expires_at ON external_auth_manifest_states(expires_at);

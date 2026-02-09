@@ -1,5 +1,5 @@
 -- Workspace invitations for email-based collaboration
-CREATE TABLE workspace_invitations (
+CREATE TABLE IF NOT EXISTS workspace_invitations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
     inviter_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -13,16 +13,16 @@ CREATE TABLE workspace_invitations (
 );
 
 -- Index for looking up invitations by workspace
-CREATE INDEX idx_workspace_invitations_workspace_id ON workspace_invitations(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_workspace_invitations_workspace_id ON workspace_invitations(workspace_id);
 
 -- Index for looking up invitations by email (for login flow)
-CREATE INDEX idx_workspace_invitations_email ON workspace_invitations(email);
+CREATE INDEX IF NOT EXISTS idx_workspace_invitations_email ON workspace_invitations(email);
 
 -- Index for looking up invitations by token (for accept/decline)
-CREATE INDEX idx_workspace_invitations_token ON workspace_invitations(token);
+CREATE INDEX IF NOT EXISTS idx_workspace_invitations_token ON workspace_invitations(token);
 
 -- Workspace collaborators who have accepted invitations
-CREATE TABLE workspace_collaborators (
+CREATE TABLE IF NOT EXISTS workspace_collaborators (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -33,7 +33,7 @@ CREATE TABLE workspace_collaborators (
 );
 
 -- Index for looking up collaborators by workspace
-CREATE INDEX idx_workspace_collaborators_workspace_id ON workspace_collaborators(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_workspace_collaborators_workspace_id ON workspace_collaborators(workspace_id);
 
 -- Index for looking up collaborators by user
-CREATE INDEX idx_workspace_collaborators_user_id ON workspace_collaborators(user_id);
+CREATE INDEX IF NOT EXISTS idx_workspace_collaborators_user_id ON workspace_collaborators(user_id);
