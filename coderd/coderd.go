@@ -1129,24 +1129,6 @@ func New(options *Options) *API {
 			r.Get("/config", api.deploymentValues)
 			r.Get("/stats", api.deploymentStats)
 			r.Get("/ssh", api.sshConfig)
-
-			// External auth provider management (database-stored).
-			r.Route("/external-auth-providers", func(r chi.Router) {
-				r.Get("/", api.listExternalAuthProviders)
-				r.Post("/", api.createExternalAuthProvider)
-
-				r.Route("/github", func(r chi.Router) {
-					r.Post("/manifest", api.initiateGitHubAppManifest)
-					r.Get("/callback", api.handleGitHubAppManifestCallbackRedirect)
-					r.Post("/callback", api.completeGitHubAppManifest)
-				})
-
-				r.Route("/{id}", func(r chi.Router) {
-					r.Get("/", api.getExternalAuthProviderByID)
-					r.Patch("/", api.updateExternalAuthProvider)
-					r.Delete("/", api.deleteExternalAuthProvider)
-				})
-			})
 		})
 		r.Route("/experiments", func(r chi.Router) {
 			r.Use(apiKeyMiddleware)

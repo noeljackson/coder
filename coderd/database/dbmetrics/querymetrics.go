@@ -104,6 +104,7 @@ func (m queryMetricsStore) DeleteOrganization(ctx context.Context, id uuid.UUID)
 	return r0
 }
 
+
 func (m queryMetricsStore) AcquireLock(ctx context.Context, pgAdvisoryXactLock int64) error {
 	start := time.Now()
 	r0 := m.s.AcquireLock(ctx, pgAdvisoryXactLock)
@@ -228,13 +229,6 @@ func (m queryMetricsStore) CleanTailnetTunnels(ctx context.Context) error {
 	r0 := m.s.CleanTailnetTunnels(ctx)
 	m.queryLatencies.WithLabelValues("CleanTailnetTunnels").Observe(time.Since(start).Seconds())
 	m.queryCounts.WithLabelValues(httpmw.ExtractHTTPRoute(ctx), httpmw.ExtractHTTPMethod(ctx), "CleanTailnetTunnels").Inc()
-	return r0
-}
-
-func (m queryMetricsStore) CleanupExpiredManifestStates(ctx context.Context) error {
-	start := time.Now()
-	r0 := m.s.CleanupExpiredManifestStates(ctx)
-	m.queryLatencies.WithLabelValues("CleanupExpiredManifestStates").Observe(time.Since(start).Seconds())
 	return r0
 }
 
@@ -399,20 +393,6 @@ func (m queryMetricsStore) DeleteExternalAuthLink(ctx context.Context, arg datab
 	r0 := m.s.DeleteExternalAuthLink(ctx, arg)
 	m.queryLatencies.WithLabelValues("DeleteExternalAuthLink").Observe(time.Since(start).Seconds())
 	m.queryCounts.WithLabelValues(httpmw.ExtractHTTPRoute(ctx), httpmw.ExtractHTTPMethod(ctx), "DeleteExternalAuthLink").Inc()
-	return r0
-}
-
-func (m queryMetricsStore) DeleteExternalAuthManifestState(ctx context.Context, state string) error {
-	start := time.Now()
-	r0 := m.s.DeleteExternalAuthManifestState(ctx, state)
-	m.queryLatencies.WithLabelValues("DeleteExternalAuthManifestState").Observe(time.Since(start).Seconds())
-	return r0
-}
-
-func (m queryMetricsStore) DeleteExternalAuthProvider(ctx context.Context, id string) error {
-	start := time.Now()
-	r0 := m.s.DeleteExternalAuthProvider(ctx, id)
-	m.queryLatencies.WithLabelValues("DeleteExternalAuthProvider").Observe(time.Since(start).Seconds())
 	return r0
 }
 
@@ -1112,27 +1092,6 @@ func (m queryMetricsStore) GetExternalAuthLinksByUserID(ctx context.Context, use
 	r0, r1 := m.s.GetExternalAuthLinksByUserID(ctx, userID)
 	m.queryLatencies.WithLabelValues("GetExternalAuthLinksByUserID").Observe(time.Since(start).Seconds())
 	m.queryCounts.WithLabelValues(httpmw.ExtractHTTPRoute(ctx), httpmw.ExtractHTTPMethod(ctx), "GetExternalAuthLinksByUserID").Inc()
-	return r0, r1
-}
-
-func (m queryMetricsStore) GetExternalAuthManifestState(ctx context.Context, state string) (database.DBExternalAuthManifestState, error) {
-	start := time.Now()
-	r0, r1 := m.s.GetExternalAuthManifestState(ctx, state)
-	m.queryLatencies.WithLabelValues("GetExternalAuthManifestState").Observe(time.Since(start).Seconds())
-	return r0, r1
-}
-
-func (m queryMetricsStore) GetExternalAuthProviderByID(ctx context.Context, id string) (database.DBExternalAuthProvider, error) {
-	start := time.Now()
-	r0, r1 := m.s.GetExternalAuthProviderByID(ctx, id)
-	m.queryLatencies.WithLabelValues("GetExternalAuthProviderByID").Observe(time.Since(start).Seconds())
-	return r0, r1
-}
-
-func (m queryMetricsStore) GetExternalAuthProviders(ctx context.Context) ([]database.DBExternalAuthProvider, error) {
-	start := time.Now()
-	r0, r1 := m.s.GetExternalAuthProviders(ctx)
-	m.queryLatencies.WithLabelValues("GetExternalAuthProviders").Observe(time.Since(start).Seconds())
 	return r0, r1
 }
 
@@ -2896,20 +2855,6 @@ func (m queryMetricsStore) InsertExternalAuthLink(ctx context.Context, arg datab
 	return r0, r1
 }
 
-func (m queryMetricsStore) InsertExternalAuthManifestState(ctx context.Context, arg database.InsertExternalAuthManifestStateParams) (database.DBExternalAuthManifestState, error) {
-	start := time.Now()
-	r0, r1 := m.s.InsertExternalAuthManifestState(ctx, arg)
-	m.queryLatencies.WithLabelValues("InsertExternalAuthManifestState").Observe(time.Since(start).Seconds())
-	return r0, r1
-}
-
-func (m queryMetricsStore) InsertExternalAuthProvider(ctx context.Context, arg database.InsertExternalAuthProviderParams) (database.DBExternalAuthProvider, error) {
-	start := time.Now()
-	r0, r1 := m.s.InsertExternalAuthProvider(ctx, arg)
-	m.queryLatencies.WithLabelValues("InsertExternalAuthProvider").Observe(time.Since(start).Seconds())
-	return r0, r1
-}
-
 func (m queryMetricsStore) InsertFile(ctx context.Context, arg database.InsertFileParams) (database.File, error) {
 	start := time.Now()
 	r0, r1 := m.s.InsertFile(ctx, arg)
@@ -3588,13 +3533,6 @@ func (m queryMetricsStore) UpdateExternalAuthLinkRefreshToken(ctx context.Contex
 	m.queryLatencies.WithLabelValues("UpdateExternalAuthLinkRefreshToken").Observe(time.Since(start).Seconds())
 	m.queryCounts.WithLabelValues(httpmw.ExtractHTTPRoute(ctx), httpmw.ExtractHTTPMethod(ctx), "UpdateExternalAuthLinkRefreshToken").Inc()
 	return r0
-}
-
-func (m queryMetricsStore) UpdateExternalAuthProvider(ctx context.Context, arg database.UpdateExternalAuthProviderParams) (database.DBExternalAuthProvider, error) {
-	start := time.Now()
-	r0, r1 := m.s.UpdateExternalAuthProvider(ctx, arg)
-	m.queryLatencies.WithLabelValues("UpdateExternalAuthProvider").Observe(time.Since(start).Seconds())
-	return r0, r1
 }
 
 func (m queryMetricsStore) UpdateGitSSHKey(ctx context.Context, arg database.UpdateGitSSHKeyParams) (database.GitSSHKey, error) {

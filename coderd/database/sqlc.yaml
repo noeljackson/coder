@@ -198,8 +198,6 @@ sql:
           aibridge_tool_usage: AIBridgeToolUsage
           aibridge_token_usage: AIBridgeTokenUsage
           aibridge_user_prompt: AIBridgeUserPrompt
-          external_auth_provider: DBExternalAuthProvider
-          external_auth_manifest_state: DBExternalAuthManifestState
 rules:
   - name: do-not-use-public-schema-in-queries
     message: "do not use public schema in queries"

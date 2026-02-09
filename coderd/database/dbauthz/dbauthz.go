@@ -1451,6 +1451,7 @@ func (q *querier) authorizeProvisionerJob(ctx context.Context, job database.Prov
 	return nil
 }
 
+
 func (q *querier) AcquireLock(ctx context.Context, id int64) error {
 	return q.db.AcquireLock(ctx, id)
 }
@@ -1586,10 +1587,6 @@ func (q *querier) CleanTailnetTunnels(ctx context.Context) error {
 		return err
 	}
 	return q.db.CleanTailnetTunnels(ctx)
-}
-
-func (q *querier) CleanupExpiredManifestStates(ctx context.Context) error {
-	panic("not implemented")
 }
 
 func (q *querier) CountAIBridgeInterceptions(ctx context.Context, arg database.CountAIBridgeInterceptionsParams) (int64, error) {
@@ -1765,14 +1762,6 @@ func (q *querier) DeleteExternalAuthLink(ctx context.Context, arg database.Delet
 		//nolint:gosimple
 		return q.db.GetExternalAuthLink(ctx, database.GetExternalAuthLinkParams{UserID: arg.UserID, ProviderID: arg.ProviderID})
 	}, q.db.DeleteExternalAuthLink)(ctx, arg)
-}
-
-func (q *querier) DeleteExternalAuthManifestState(ctx context.Context, state string) error {
-	panic("not implemented")
-}
-
-func (q *querier) DeleteExternalAuthProvider(ctx context.Context, id string) error {
-	panic("not implemented")
 }
 
 func (q *querier) DeleteGitSSHKey(ctx context.Context, userID uuid.UUID) error {
@@ -2428,18 +2417,6 @@ func (q *querier) GetExternalAuthLink(ctx context.Context, arg database.GetExter
 
 func (q *querier) GetExternalAuthLinksByUserID(ctx context.Context, userID uuid.UUID) ([]database.ExternalAuthLink, error) {
 	return fetchWithPostFilter(q.auth, policy.ActionReadPersonal, q.db.GetExternalAuthLinksByUserID)(ctx, userID)
-}
-
-func (q *querier) GetExternalAuthManifestState(ctx context.Context, state string) (database.DBExternalAuthManifestState, error) {
-	panic("not implemented")
-}
-
-func (q *querier) GetExternalAuthProviderByID(ctx context.Context, id string) (database.DBExternalAuthProvider, error) {
-	panic("not implemented")
-}
-
-func (q *querier) GetExternalAuthProviders(ctx context.Context) ([]database.DBExternalAuthProvider, error) {
-	panic("not implemented")
 }
 
 func (q *querier) GetFailedWorkspaceBuildsByTemplateID(ctx context.Context, arg database.GetFailedWorkspaceBuildsByTemplateIDParams) ([]database.GetFailedWorkspaceBuildsByTemplateIDRow, error) {
@@ -4345,14 +4322,6 @@ func (q *querier) InsertExternalAuthLink(ctx context.Context, arg database.Inser
 	return insertWithAction(q.log, q.auth, rbac.ResourceUser.WithID(arg.UserID).WithOwner(arg.UserID.String()), policy.ActionUpdatePersonal, q.db.InsertExternalAuthLink)(ctx, arg)
 }
 
-func (q *querier) InsertExternalAuthManifestState(ctx context.Context, arg database.InsertExternalAuthManifestStateParams) (database.DBExternalAuthManifestState, error) {
-	panic("not implemented")
-}
-
-func (q *querier) InsertExternalAuthProvider(ctx context.Context, arg database.InsertExternalAuthProviderParams) (database.DBExternalAuthProvider, error) {
-	panic("not implemented")
-}
-
 func (q *querier) InsertFile(ctx context.Context, arg database.InsertFileParams) (database.File, error) {
 	return insert(q.log, q.auth, rbac.ResourceFile.WithOwner(arg.CreatedBy.String()), q.db.InsertFile)(ctx, arg)
 }
@@ -5124,10 +5093,6 @@ func (q *querier) UpdateExternalAuthLinkRefreshToken(ctx context.Context, arg da
 		return q.db.GetExternalAuthLink(ctx, database.GetExternalAuthLinkParams{UserID: arg.UserID, ProviderID: arg.ProviderID})
 	}
 	return fetchAndExec(q.log, q.auth, policy.ActionUpdatePersonal, fetch, q.db.UpdateExternalAuthLinkRefreshToken)(ctx, arg)
-}
-
-func (q *querier) UpdateExternalAuthProvider(ctx context.Context, arg database.UpdateExternalAuthProviderParams) (database.DBExternalAuthProvider, error) {
-	panic("not implemented")
 }
 
 func (q *querier) UpdateGitSSHKey(ctx context.Context, arg database.UpdateGitSSHKeyParams) (database.GitSSHKey, error) {

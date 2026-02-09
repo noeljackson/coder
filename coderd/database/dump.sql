@@ -283,8 +283,7 @@ CREATE TYPE crypto_key_feature AS ENUM (
     'workspace_apps_token',
     'workspace_apps_api_key',
     'oidc_convert',
-    'tailnet_resume',
-    'external_auth'
+    'tailnet_resume'
 );
 
 CREATE TYPE display_app AS ENUM (
@@ -1251,49 +1250,6 @@ COMMENT ON COLUMN external_auth_links.oauth_access_token_key_id IS 'The ID of th
 COMMENT ON COLUMN external_auth_links.oauth_refresh_token_key_id IS 'The ID of the key used to encrypt the OAuth refresh token. If this is NULL, the refresh token is not encrypted';
 
 COMMENT ON COLUMN external_auth_links.oauth_refresh_failure_reason IS 'This error means the refresh token is invalid. Cached so we can avoid calling the external provider again for the same error.';
-
-CREATE TABLE external_auth_manifest_states (
-    state text NOT NULL,
-    redirect_uri text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    expires_at timestamp with time zone DEFAULT (now() + '00:10:00'::interval) NOT NULL
-);
-
-COMMENT ON TABLE external_auth_manifest_states IS 'Temporary state storage for GitHub App manifest creation flow';
-
-CREATE TABLE external_auth_providers (
-    id text NOT NULL,
-    type text DEFAULT 'github'::text NOT NULL,
-    client_id text NOT NULL,
-    client_secret_encrypted bytea,
-    client_secret_key_id text,
-    display_name text,
-    display_icon text,
-    auth_url text,
-    token_url text,
-    validate_url text,
-    device_code_url text,
-    scopes text[] DEFAULT '{}'::text[],
-    extra_token_keys text[] DEFAULT '{}'::text[],
-    no_refresh boolean DEFAULT false NOT NULL,
-    device_flow boolean DEFAULT false NOT NULL,
-    regex text,
-    app_install_url text,
-    app_installations_url text,
-    github_app_id bigint,
-    github_app_webhook_secret_encrypted bytea,
-    github_app_webhook_secret_key_id text,
-    github_app_private_key_encrypted bytea,
-    github_app_private_key_key_id text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-COMMENT ON TABLE external_auth_providers IS 'Stores dynamically created external auth providers like GitHub Apps created via manifest flow';
-
-COMMENT ON COLUMN external_auth_providers.client_secret_encrypted IS 'Encrypted OAuth client secret using dbcrypt';
-
-COMMENT ON COLUMN external_auth_providers.github_app_id IS 'GitHub App ID for GitHub Apps created via manifest';
 
 CREATE TABLE files (
     hash character varying(64) NOT NULL,
@@ -3066,12 +3022,6 @@ ALTER TABLE ONLY dbcrypt_keys
 ALTER TABLE ONLY dbcrypt_keys
     ADD CONSTRAINT dbcrypt_keys_revoked_key_digest_key UNIQUE (revoked_key_digest);
 
-ALTER TABLE ONLY external_auth_manifest_states
-    ADD CONSTRAINT external_auth_manifest_states_pkey PRIMARY KEY (state);
-
-ALTER TABLE ONLY external_auth_providers
-    ADD CONSTRAINT external_auth_providers_pkey PRIMARY KEY (id);
-
 ALTER TABLE ONLY files
     ADD CONSTRAINT files_hash_created_by_key UNIQUE (hash, created_by);
 
@@ -3406,8 +3356,6 @@ CREATE INDEX idx_connection_logs_workspace_owner_id ON connection_logs USING btr
 CREATE INDEX idx_custom_roles_id ON custom_roles USING btree (id);
 
 CREATE UNIQUE INDEX idx_custom_roles_name_lower_organization_id ON custom_roles USING btree (lower(name), COALESCE(organization_id, '00000000-0000-0000-0000-000000000000'::uuid));
-
-CREATE INDEX idx_external_auth_manifest_states_expires_at ON external_auth_manifest_states USING btree (expires_at);
 
 CREATE INDEX idx_inbox_notifications_user_id_read_at ON inbox_notifications USING btree (user_id, read_at);
 

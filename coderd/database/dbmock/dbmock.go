@@ -411,6 +411,36 @@ func (mr *MockStoreMockRecorder) CountUnreadInboxNotificationsByUserID(ctx, user
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountUnreadInboxNotificationsByUserID", reflect.TypeOf((*MockStore)(nil).CountUnreadInboxNotificationsByUserID), ctx, userID)
 }
 
+// CountWorkspacesByOrganizationID mocks base method.
+func (m *MockStore) CountWorkspacesByOrganizationID(ctx context.Context, organizationID uuid.UUID) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountWorkspacesByOrganizationID", ctx, organizationID)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountWorkspacesByOrganizationID indicates an expected call of CountWorkspacesByOrganizationID.
+func (mr *MockStoreMockRecorder) CountWorkspacesByOrganizationID(ctx, organizationID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountWorkspacesByOrganizationID", reflect.TypeOf((*MockStore)(nil).CountWorkspacesByOrganizationID), ctx, organizationID)
+}
+
+// CountWorkspacesByOwnerID mocks base method.
+func (m *MockStore) CountWorkspacesByOwnerID(ctx context.Context, ownerID uuid.UUID) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountWorkspacesByOwnerID", ctx, ownerID)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountWorkspacesByOwnerID indicates an expected call of CountWorkspacesByOwnerID.
+func (mr *MockStoreMockRecorder) CountWorkspacesByOwnerID(ctx, ownerID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountWorkspacesByOwnerID", reflect.TypeOf((*MockStore)(nil).CountWorkspacesByOwnerID), ctx, ownerID)
+}
+
 // CreateUserSecret mocks base method.
 func (m *MockStore) CreateUserSecret(ctx context.Context, arg database.CreateUserSecretParams) (database.UserSecret, error) {
 	m.ctrl.T.Helper()
@@ -424,6 +454,36 @@ func (m *MockStore) CreateUserSecret(ctx context.Context, arg database.CreateUse
 func (mr *MockStoreMockRecorder) CreateUserSecret(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUserSecret", reflect.TypeOf((*MockStore)(nil).CreateUserSecret), ctx, arg)
+}
+
+// CreateWorkspaceCollaborator mocks base method.
+func (m *MockStore) CreateWorkspaceCollaborator(ctx context.Context, arg database.CreateWorkspaceCollaboratorParams) (database.WorkspaceCollaborator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateWorkspaceCollaborator", ctx, arg)
+	ret0, _ := ret[0].(database.WorkspaceCollaborator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateWorkspaceCollaborator indicates an expected call of CreateWorkspaceCollaborator.
+func (mr *MockStoreMockRecorder) CreateWorkspaceCollaborator(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWorkspaceCollaborator", reflect.TypeOf((*MockStore)(nil).CreateWorkspaceCollaborator), ctx, arg)
+}
+
+// CreateWorkspaceInvitation mocks base method.
+func (m *MockStore) CreateWorkspaceInvitation(ctx context.Context, arg database.CreateWorkspaceInvitationParams) (database.WorkspaceInvitation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateWorkspaceInvitation", ctx, arg)
+	ret0, _ := ret[0].(database.WorkspaceInvitation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateWorkspaceInvitation indicates an expected call of CreateWorkspaceInvitation.
+func (mr *MockStoreMockRecorder) CreateWorkspaceInvitation(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWorkspaceInvitation", reflect.TypeOf((*MockStore)(nil).CreateWorkspaceInvitation), ctx, arg)
 }
 
 // CustomRoles mocks base method.
@@ -1039,6 +1099,48 @@ func (mr *MockStoreMockRecorder) DeleteWorkspaceAgentPortSharesByTemplate(ctx, t
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWorkspaceAgentPortSharesByTemplate", reflect.TypeOf((*MockStore)(nil).DeleteWorkspaceAgentPortSharesByTemplate), ctx, templateID)
 }
 
+// DeleteWorkspaceCollaborator mocks base method.
+func (m *MockStore) DeleteWorkspaceCollaborator(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteWorkspaceCollaborator", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteWorkspaceCollaborator indicates an expected call of DeleteWorkspaceCollaborator.
+func (mr *MockStoreMockRecorder) DeleteWorkspaceCollaborator(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWorkspaceCollaborator", reflect.TypeOf((*MockStore)(nil).DeleteWorkspaceCollaborator), ctx, id)
+}
+
+// DeleteWorkspaceCollaboratorByUserAndWorkspace mocks base method.
+func (m *MockStore) DeleteWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg database.DeleteWorkspaceCollaboratorByUserAndWorkspaceParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteWorkspaceCollaboratorByUserAndWorkspace", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteWorkspaceCollaboratorByUserAndWorkspace indicates an expected call of DeleteWorkspaceCollaboratorByUserAndWorkspace.
+func (mr *MockStoreMockRecorder) DeleteWorkspaceCollaboratorByUserAndWorkspace(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWorkspaceCollaboratorByUserAndWorkspace", reflect.TypeOf((*MockStore)(nil).DeleteWorkspaceCollaboratorByUserAndWorkspace), ctx, arg)
+}
+
+// DeleteWorkspaceInvitation mocks base method.
+func (m *MockStore) DeleteWorkspaceInvitation(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteWorkspaceInvitation", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteWorkspaceInvitation indicates an expected call of DeleteWorkspaceInvitation.
+func (mr *MockStoreMockRecorder) DeleteWorkspaceInvitation(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWorkspaceInvitation", reflect.TypeOf((*MockStore)(nil).DeleteWorkspaceInvitation), ctx, id)
+}
+
 // DeleteWorkspaceSubAgentByID mocks base method.
 func (m *MockStore) DeleteWorkspaceSubAgentByID(ctx context.Context, id uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -1093,6 +1195,20 @@ func (m *MockStore) ExpirePrebuildsAPIKeys(ctx context.Context, now time.Time) e
 func (mr *MockStoreMockRecorder) ExpirePrebuildsAPIKeys(ctx, now any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpirePrebuildsAPIKeys", reflect.TypeOf((*MockStore)(nil).ExpirePrebuildsAPIKeys), ctx, now)
+}
+
+// ExpireWorkspaceInvitations mocks base method.
+func (m *MockStore) ExpireWorkspaceInvitations(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExpireWorkspaceInvitations", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ExpireWorkspaceInvitations indicates an expected call of ExpireWorkspaceInvitations.
+func (mr *MockStoreMockRecorder) ExpireWorkspaceInvitations(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpireWorkspaceInvitations", reflect.TypeOf((*MockStore)(nil).ExpireWorkspaceInvitations), ctx)
 }
 
 // FavoriteWorkspace mocks base method.
@@ -2682,6 +2798,21 @@ func (m *MockStore) GetParameterSchemasByJobID(ctx context.Context, jobID uuid.U
 func (mr *MockStoreMockRecorder) GetParameterSchemasByJobID(ctx, jobID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParameterSchemasByJobID", reflect.TypeOf((*MockStore)(nil).GetParameterSchemasByJobID), ctx, jobID)
+}
+
+// GetPendingWorkspaceInvitationsByEmail mocks base method.
+func (m *MockStore) GetPendingWorkspaceInvitationsByEmail(ctx context.Context, email string) ([]database.WorkspaceInvitation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPendingWorkspaceInvitationsByEmail", ctx, email)
+	ret0, _ := ret[0].([]database.WorkspaceInvitation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPendingWorkspaceInvitationsByEmail indicates an expected call of GetPendingWorkspaceInvitationsByEmail.
+func (mr *MockStoreMockRecorder) GetPendingWorkspaceInvitationsByEmail(ctx, email any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingWorkspaceInvitationsByEmail", reflect.TypeOf((*MockStore)(nil).GetPendingWorkspaceInvitationsByEmail), ctx, email)
 }
 
 // GetPrebuildMetrics mocks base method.
@@ -4662,6 +4793,111 @@ func (m *MockStore) GetWorkspaceByWorkspaceAppID(ctx context.Context, workspaceA
 func (mr *MockStoreMockRecorder) GetWorkspaceByWorkspaceAppID(ctx, workspaceAppID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkspaceByWorkspaceAppID", reflect.TypeOf((*MockStore)(nil).GetWorkspaceByWorkspaceAppID), ctx, workspaceAppID)
+}
+
+// GetWorkspaceCollaborationsByUserID mocks base method.
+func (m *MockStore) GetWorkspaceCollaborationsByUserID(ctx context.Context, userID uuid.UUID) ([]database.WorkspaceCollaborator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWorkspaceCollaborationsByUserID", ctx, userID)
+	ret0, _ := ret[0].([]database.WorkspaceCollaborator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWorkspaceCollaborationsByUserID indicates an expected call of GetWorkspaceCollaborationsByUserID.
+func (mr *MockStoreMockRecorder) GetWorkspaceCollaborationsByUserID(ctx, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkspaceCollaborationsByUserID", reflect.TypeOf((*MockStore)(nil).GetWorkspaceCollaborationsByUserID), ctx, userID)
+}
+
+// GetWorkspaceCollaboratorByID mocks base method.
+func (m *MockStore) GetWorkspaceCollaboratorByID(ctx context.Context, id uuid.UUID) (database.WorkspaceCollaborator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWorkspaceCollaboratorByID", ctx, id)
+	ret0, _ := ret[0].(database.WorkspaceCollaborator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWorkspaceCollaboratorByID indicates an expected call of GetWorkspaceCollaboratorByID.
+func (mr *MockStoreMockRecorder) GetWorkspaceCollaboratorByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkspaceCollaboratorByID", reflect.TypeOf((*MockStore)(nil).GetWorkspaceCollaboratorByID), ctx, id)
+}
+
+// GetWorkspaceCollaboratorByUserAndWorkspace mocks base method.
+func (m *MockStore) GetWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg database.GetWorkspaceCollaboratorByUserAndWorkspaceParams) (database.WorkspaceCollaborator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWorkspaceCollaboratorByUserAndWorkspace", ctx, arg)
+	ret0, _ := ret[0].(database.WorkspaceCollaborator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWorkspaceCollaboratorByUserAndWorkspace indicates an expected call of GetWorkspaceCollaboratorByUserAndWorkspace.
+func (mr *MockStoreMockRecorder) GetWorkspaceCollaboratorByUserAndWorkspace(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkspaceCollaboratorByUserAndWorkspace", reflect.TypeOf((*MockStore)(nil).GetWorkspaceCollaboratorByUserAndWorkspace), ctx, arg)
+}
+
+// GetWorkspaceCollaboratorsByWorkspaceID mocks base method.
+func (m *MockStore) GetWorkspaceCollaboratorsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]database.WorkspaceCollaborator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWorkspaceCollaboratorsByWorkspaceID", ctx, workspaceID)
+	ret0, _ := ret[0].([]database.WorkspaceCollaborator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWorkspaceCollaboratorsByWorkspaceID indicates an expected call of GetWorkspaceCollaboratorsByWorkspaceID.
+func (mr *MockStoreMockRecorder) GetWorkspaceCollaboratorsByWorkspaceID(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkspaceCollaboratorsByWorkspaceID", reflect.TypeOf((*MockStore)(nil).GetWorkspaceCollaboratorsByWorkspaceID), ctx, workspaceID)
+}
+
+// GetWorkspaceInvitationByID mocks base method.
+func (m *MockStore) GetWorkspaceInvitationByID(ctx context.Context, id uuid.UUID) (database.WorkspaceInvitation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWorkspaceInvitationByID", ctx, id)
+	ret0, _ := ret[0].(database.WorkspaceInvitation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWorkspaceInvitationByID indicates an expected call of GetWorkspaceInvitationByID.
+func (mr *MockStoreMockRecorder) GetWorkspaceInvitationByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkspaceInvitationByID", reflect.TypeOf((*MockStore)(nil).GetWorkspaceInvitationByID), ctx, id)
+}
+
+// GetWorkspaceInvitationByToken mocks base method.
+func (m *MockStore) GetWorkspaceInvitationByToken(ctx context.Context, token string) (database.WorkspaceInvitation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWorkspaceInvitationByToken", ctx, token)
+	ret0, _ := ret[0].(database.WorkspaceInvitation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWorkspaceInvitationByToken indicates an expected call of GetWorkspaceInvitationByToken.
+func (mr *MockStoreMockRecorder) GetWorkspaceInvitationByToken(ctx, token any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkspaceInvitationByToken", reflect.TypeOf((*MockStore)(nil).GetWorkspaceInvitationByToken), ctx, token)
+}
+
+// GetWorkspaceInvitationsByWorkspaceID mocks base method.
+func (m *MockStore) GetWorkspaceInvitationsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]database.WorkspaceInvitation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWorkspaceInvitationsByWorkspaceID", ctx, workspaceID)
+	ret0, _ := ret[0].([]database.WorkspaceInvitation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWorkspaceInvitationsByWorkspaceID indicates an expected call of GetWorkspaceInvitationsByWorkspaceID.
+func (mr *MockStoreMockRecorder) GetWorkspaceInvitationsByWorkspaceID(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkspaceInvitationsByWorkspaceID", reflect.TypeOf((*MockStore)(nil).GetWorkspaceInvitationsByWorkspaceID), ctx, workspaceID)
 }
 
 // GetWorkspaceModulesByJobID mocks base method.
@@ -7476,6 +7712,21 @@ func (mr *MockStoreMockRecorder) UpdateWorkspaceBuildProvisionerStateByID(ctx, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateWorkspaceBuildProvisionerStateByID", reflect.TypeOf((*MockStore)(nil).UpdateWorkspaceBuildProvisionerStateByID), ctx, arg)
 }
 
+// UpdateWorkspaceCollaboratorAccessLevel mocks base method.
+func (m *MockStore) UpdateWorkspaceCollaboratorAccessLevel(ctx context.Context, arg database.UpdateWorkspaceCollaboratorAccessLevelParams) (database.WorkspaceCollaborator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateWorkspaceCollaboratorAccessLevel", ctx, arg)
+	ret0, _ := ret[0].(database.WorkspaceCollaborator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateWorkspaceCollaboratorAccessLevel indicates an expected call of UpdateWorkspaceCollaboratorAccessLevel.
+func (mr *MockStoreMockRecorder) UpdateWorkspaceCollaboratorAccessLevel(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateWorkspaceCollaboratorAccessLevel", reflect.TypeOf((*MockStore)(nil).UpdateWorkspaceCollaboratorAccessLevel), ctx, arg)
+}
+
 // UpdateWorkspaceDeletedByID mocks base method.
 func (m *MockStore) UpdateWorkspaceDeletedByID(ctx context.Context, arg database.UpdateWorkspaceDeletedByIDParams) error {
 	m.ctrl.T.Helper()
@@ -7503,6 +7754,21 @@ func (m *MockStore) UpdateWorkspaceDormantDeletingAt(ctx context.Context, arg da
 func (mr *MockStoreMockRecorder) UpdateWorkspaceDormantDeletingAt(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateWorkspaceDormantDeletingAt", reflect.TypeOf((*MockStore)(nil).UpdateWorkspaceDormantDeletingAt), ctx, arg)
+}
+
+// UpdateWorkspaceInvitationStatus mocks base method.
+func (m *MockStore) UpdateWorkspaceInvitationStatus(ctx context.Context, arg database.UpdateWorkspaceInvitationStatusParams) (database.WorkspaceInvitation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateWorkspaceInvitationStatus", ctx, arg)
+	ret0, _ := ret[0].(database.WorkspaceInvitation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateWorkspaceInvitationStatus indicates an expected call of UpdateWorkspaceInvitationStatus.
+func (mr *MockStoreMockRecorder) UpdateWorkspaceInvitationStatus(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateWorkspaceInvitationStatus", reflect.TypeOf((*MockStore)(nil).UpdateWorkspaceInvitationStatus), ctx, arg)
 }
 
 // UpdateWorkspaceLastUsedAt mocks base method.
