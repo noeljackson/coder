@@ -278,8 +278,7 @@ jobs:
           HELM_VERSION="${VERSION//+/-}"
           ./scripts/helm.sh \
             --version "$HELM_VERSION" \
-            --chart coder \
-            --output build/
+            --chart coder
 
       - name: Push Helm chart to GHCR
         run: |
