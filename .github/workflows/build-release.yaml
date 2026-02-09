@@ -290,7 +290,9 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          # Docker tags cannot contain '+', replace with '-' (same as metadata-action)
+          DOCKER_TAG="${VERSION//+/-}"
           docker buildx imagetools create \
             --tag "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" \
-            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
-          echo "Tagged ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION} as latest"
+            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DOCKER_TAG}"
+          echo "Tagged ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DOCKER_TAG} as latest"
