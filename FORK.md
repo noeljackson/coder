@@ -1,44 +1,23 @@
 # Coder Fork - Custom Features
 
-This fork of [coder/coder](https://github.com/coder/coder) adds features for workspace collaboration and simplified deployment.
+This fork of [coder/coder](https://github.com/coder/coder) adds features for simplified deployment with the Codespace platform.
 
 **Upstream**: https://github.com/coder/coder
 **Fork**: https://github.com/noeljackson/coder
 
 ## Custom Features
 
-### Workspace Invitations & Collaborators
+### Workspace Access Control
 
-Share workspaces with other users via email invitations.
+Workspace access is controlled at the Codespace platform layer via OIDC tenant
+membership. Users must be members of a tenant to access its Coder instance.
+The `maybeAutoConsent` function in Codespace automatically grants OAuth consent
+for tenant members during OIDC login. When a user is removed from a tenant,
+their consent is revoked.
 
-**Access Levels:**
-- `readonly` - View workspace only
-- `use` - Connect to and use workspace
-- `admin` - Full control including managing collaborators
-
-**API Endpoints:**
-
-| Endpoint                                     | Method | Description             |
-|----------------------------------------------|--------|-------------------------|
-| `/api/v2/workspaces/{id}/invitations`        | POST   | Create invitation       |
-| `/api/v2/workspaces/{id}/invitations`        | GET    | List invitations        |
-| `/api/v2/workspaces/{id}/invitations/{id}`   | DELETE | Cancel invitation       |
-| `/api/v2/invitations/{token}`                | GET    | Get invitation by token |
-| `/api/v2/invitations/{token}/accept`         | POST   | Accept invitation       |
-| `/api/v2/invitations/{token}/decline`        | POST   | Decline invitation      |
-| `/api/v2/workspaces/{id}/collaborators`      | GET    | List collaborators      |
-| `/api/v2/workspaces/{id}/collaborators/{id}` | PATCH  | Update access level     |
-| `/api/v2/workspaces/{id}/collaborators/{id}` | DELETE | Remove collaborator     |
-| `/api/v2/users/me/workspace-collaborations`  | GET    | My collaborations       |
-| `/api/v2/users/me/workspace-invitations`     | GET    | My pending invitations  |
-
-**Files:**
-- `codersdk/workspaceinvitations.go` - SDK types and client methods
-- `coderd/workspaceinvitations.go` - API handlers
-- `coderd/database/queries/workspaceinvitations.sql` - Database queries
-- `site/src/pages/InvitationPage/` - Invitation acceptance UI
-- `site/src/modules/workspaces/WorkspaceCollaborators/` - Collaborator management UI
-- `site/src/api/queries/workspaceInvitations.ts` - Frontend API hooks
+The `workspace_invitations` and `workspace_collaborators` database tables exist
+from a previous feature but are no longer used. The migration
+(`000417_workspace_invitations.up.sql`) is preserved for safety.
 
 ### Email Integration (Resend)
 
@@ -140,40 +119,6 @@ git merge upstream/main
 # Resolve conflicts (preserve fork customizations)
 git push origin main
 ```
-
-**Common Merge Conflicts:**
-- `coderd/database/dbmetrics/querymetrics.go` - Keep `ExpireWorkspaceInvitations`
-- `site/src/api/typesGenerated.ts` - Keep `UpdateWorkspaceCollaboratorRequest`
-
-## Database Schema
-
-This fork adds two tables:
-
-### workspace_invitations
-
-| Column       | Type      | Description                                |
-|--------------|-----------|--------------------------------------------|
-| id           | UUID      | Primary key                                |
-| workspace_id | UUID      | Target workspace                           |
-| inviter_id   | UUID      | User who sent invitation                   |
-| email        | TEXT      | Invitee email                              |
-| access_level | TEXT      | readonly/use/admin                         |
-| token        | TEXT      | Unique acceptance token                    |
-| status       | TEXT      | pending/accepted/declined/expired/canceled |
-| expires_at   | TIMESTAMP | Expiration time                            |
-| created_at   | TIMESTAMP | Creation time                              |
-| responded_at | TIMESTAMP | Response time (nullable)                   |
-
-### workspace_collaborators
-
-| Column       | Type      | Description               |
-|--------------|-----------|---------------------------|
-| id           | UUID      | Primary key               |
-| workspace_id | UUID      | Target workspace          |
-| user_id      | UUID      | Collaborator user         |
-| access_level | TEXT      | readonly/use/admin        |
-| invited_by   | UUID      | Who added them (nullable) |
-| created_at   | TIMESTAMP | Creation time             |
 
 ## Development
 

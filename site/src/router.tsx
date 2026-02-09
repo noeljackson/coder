@@ -350,9 +350,6 @@ const ProvisionerJobsPage = lazy(
 );
 const TasksPage = lazy(() => import("./pages/TasksPage/TasksPage"));
 const TaskPage = lazy(() => import("./pages/TaskPage/TaskPage"));
-const InvitationPage = lazy(
-	() => import("./pages/InvitationPage/InvitationPage"),
-);
 const AIBridgeLayout = lazy(
 	() => import("./pages/AIBridgePage/AIBridgeLayout"),
 );
@@ -612,8 +609,6 @@ export const router = createBrowserRouter(
 					</Route>
 
 					<Route path="/install" element={<CliInstallPage />} />
-
-					<Route path="/invitations/:token" element={<InvitationPage />} />
 
 					{/* Using path="*"" means "match anything", so this route
               acts like a catch-all for URLs that we don't have explicit

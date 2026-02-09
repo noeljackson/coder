@@ -1424,8 +1424,6 @@ func New(options *Options) *API {
 							r.Delete("/subscription", api.deleteUserWebpushSubscription)
 							r.Post("/test", api.postUserPushNotificationTest)
 						})
-						r.Get("/workspace-collaborations", api.getMyWorkspaceCollaborations)
-						r.Get("/workspace-invitations", api.getMyPendingInvitations)
 					})
 				})
 			})
@@ -1535,27 +1533,7 @@ func New(options *Options) *API {
 					r.Patch("/", api.patchWorkspaceACL)
 					r.Delete("/", api.deleteWorkspaceACL)
 				})
-				r.Route("/invitations", func(r chi.Router) {
-					r.Post("/", api.createWorkspaceInvitation)
-					r.Get("/", api.listWorkspaceInvitations)
-					r.Delete("/{invitation}", api.deleteWorkspaceInvitation)
 				})
-				r.Route("/collaborators", func(r chi.Router) {
-					r.Get("/", api.listWorkspaceCollaborators)
-					r.Patch("/{collaborator}", api.updateWorkspaceCollaborator)
-					r.Delete("/{collaborator}", api.deleteWorkspaceCollaborator)
-				})
-			})
-		})
-		r.Route("/invitations/{token}", func(r chi.Router) {
-			// Public endpoint to view invitation details
-			r.Get("/", api.getWorkspaceInvitationByToken)
-			// Authenticated endpoints to accept/decline
-			r.Group(func(r chi.Router) {
-				r.Use(apiKeyMiddleware)
-				r.Post("/accept", api.acceptWorkspaceInvitation)
-				r.Post("/decline", api.declineWorkspaceInvitation)
-			})
 		})
 		r.Route("/workspacebuilds/{workspacebuild}", func(r chi.Router) {
 			r.Use(

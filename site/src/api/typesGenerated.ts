@@ -1496,15 +1496,6 @@ export interface CreateWorkspaceBuildRequest {
 	readonly reason?: CreateWorkspaceBuildReason;
 }
 
-// From codersdk/workspaceinvitations.go
-/**
- * CreateWorkspaceInvitationRequest is the request body for creating a workspace invitation.
- */
-export interface CreateWorkspaceInvitationRequest {
-	readonly email: string;
-	readonly access_level: WorkspaceAccessLevel;
-}
-
 // From codersdk/workspaceproxy.go
 export interface CreateWorkspaceProxyRequest {
 	readonly name: string;
@@ -5909,14 +5900,6 @@ export interface UpdateWorkspaceAutostartRequest {
 	readonly schedule?: string;
 }
 
-// From codersdk/workspaceinvitations.go
-/**
- * UpdateWorkspaceCollaboratorRequest is the request body for updating a collaborator's access level.
- */
-export interface UpdateWorkspaceCollaboratorRequest {
-	readonly access_level: WorkspaceAccessLevel;
-}
-
 // From codersdk/workspacebuilds.go
 /**
  * UpdateWorkspaceBuildStateRequest is the request body for updating the
@@ -6299,15 +6282,6 @@ export interface WorkspaceACL {
 	readonly users: readonly WorkspaceUser[];
 	readonly group: readonly WorkspaceGroup[];
 }
-
-// From codersdk/workspaceinvitations.go
-export type WorkspaceAccessLevel = "admin" | "readonly" | "use";
-
-export const WorkspaceAccessLevels: WorkspaceAccessLevel[] = [
-	"admin",
-	"readonly",
-	"use",
-];
 
 // From codersdk/workspaceagents.go
 export interface WorkspaceAgent {
@@ -6854,25 +6828,6 @@ export interface WorkspaceBuildsRequest extends Pagination {
 	readonly since?: string;
 }
 
-// From codersdk/workspaceinvitations.go
-/**
- * WorkspaceCollaborator represents a user with access to a workspace.
- */
-export interface WorkspaceCollaborator {
-	readonly id: string;
-	readonly workspace_id: string;
-	readonly user_id: string;
-	readonly access_level: WorkspaceAccessLevel;
-	readonly invited_by?: string;
-	readonly created_at: string;
-	/**
-	 * Populated fields
-	 */
-	readonly username?: string;
-	readonly email?: string;
-	readonly avatar_url?: string;
-}
-
 // From codersdk/deployment.go
 export interface WorkspaceConnectionLatencyMS {
 	readonly P50: number;
@@ -6909,44 +6864,6 @@ export interface WorkspaceHealth {
 	readonly healthy: boolean; // Healthy is true if the workspace is healthy.
 	readonly failing_agents: readonly string[]; // FailingAgents lists the IDs of the agents that are failing, if any.
 }
-
-// From codersdk/workspaceinvitations.go
-/**
- * WorkspaceInvitation represents an invitation to collaborate on a workspace.
- */
-export interface WorkspaceInvitation {
-	readonly id: string;
-	readonly workspace_id: string;
-	readonly inviter_id: string;
-	readonly email: string;
-	readonly access_level: WorkspaceAccessLevel;
-	readonly token?: string; // Only shown on creation
-	readonly status: WorkspaceInvitationStatus;
-	readonly expires_at: string;
-	readonly created_at: string;
-	readonly responded_at?: string;
-	/**
-	 * Populated fields
-	 */
-	readonly inviter_username?: string;
-	readonly workspace_name?: string;
-}
-
-// From codersdk/workspaceinvitations.go
-export type WorkspaceInvitationStatus =
-	| "accepted"
-	| "canceled"
-	| "declined"
-	| "expired"
-	| "pending";
-
-export const WorkspaceInvitationStatuses: WorkspaceInvitationStatus[] = [
-	"accepted",
-	"canceled",
-	"declined",
-	"expired",
-	"pending",
-];
 
 // From codersdk/workspaces.go
 export interface WorkspaceOptions {

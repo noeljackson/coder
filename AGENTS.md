@@ -122,10 +122,6 @@ This is a fork of [coder/coder](https://github.com/coder/coder). See `FORK.md` f
 **When merging upstream:**
 - Always preserve our custom code during conflict resolution
 - Key files with fork customizations:
-  - `coderd/database/dbmetrics/querymetrics.go` - Keep `ExpireWorkspaceInvitations`
-  - `site/src/api/typesGenerated.ts` - Keep `UpdateWorkspaceCollaboratorRequest`
-  - `codersdk/workspaceinvitations.go` - Workspace invitation SDK
-  - `coderd/workspaceinvitations.go` - Workspace invitation handlers
   - `coderd/email/resend.go` - Email integration
   - `.github/workflows/build-release.yaml` - Custom CI/CD
 
@@ -133,6 +129,18 @@ This is a fork of [coder/coder](https://github.com/coder/coder). See `FORK.md` f
 - Update `FORK.md` to document new features, API endpoints, or configuration
 - Keep fork features isolated in dedicated files when possible
 - Add database tables to the schema section in `FORK.md`
+
+### Versioning and Releases
+
+- **Do NOT manually create version tags** in this repo. Version is auto-detected
+  by `scripts/version.sh` from upstream tags. Manual tags break the versioning
+  mechanism.
+- The build-release workflow resolves the version automatically on every push
+  to `main`.
+- The `latest` Docker tag is only applied after both the Docker image and Helm
+  chart are successfully pushed. This prevents the Codespace platform from
+  resolving a version that has a Docker image but no Helm chart.
+- See `FORK.md` > "Artifact Sync: Docker + Helm" for full details.
 
 ### New Feature Checklist
 

@@ -82,8 +82,6 @@ type sqlcQuerier interface {
 	// Count non-deleted workspaces owned by a specific user
 	CountWorkspacesByOwnerID(ctx context.Context, ownerID uuid.UUID) (int64, error)
 	CreateUserSecret(ctx context.Context, arg CreateUserSecretParams) (UserSecret, error)
-	CreateWorkspaceCollaborator(ctx context.Context, arg CreateWorkspaceCollaboratorParams) (WorkspaceCollaborator, error)
-	CreateWorkspaceInvitation(ctx context.Context, arg CreateWorkspaceInvitationParams) (WorkspaceInvitation, error)
 	CustomRoles(ctx context.Context, arg CustomRolesParams) ([]CustomRole, error)
 	DeleteAPIKeyByID(ctx context.Context, id string) error
 	DeleteAPIKeysByUserID(ctx context.Context, userID uuid.UUID) error
@@ -144,9 +142,6 @@ type sqlcQuerier interface {
 	DeleteWorkspaceACLsByOrganization(ctx context.Context, organizationID uuid.UUID) error
 	DeleteWorkspaceAgentPortShare(ctx context.Context, arg DeleteWorkspaceAgentPortShareParams) error
 	DeleteWorkspaceAgentPortSharesByTemplate(ctx context.Context, templateID uuid.UUID) error
-	DeleteWorkspaceCollaborator(ctx context.Context, id uuid.UUID) error
-	DeleteWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg DeleteWorkspaceCollaboratorByUserAndWorkspaceParams) error
-	DeleteWorkspaceInvitation(ctx context.Context, id uuid.UUID) error
 	DeleteWorkspaceSubAgentByID(ctx context.Context, id uuid.UUID) error
 	// Disable foreign keys and triggers for all tables.
 	// Deprecated: disable foreign keys was created to aid in migrating off
@@ -158,7 +153,6 @@ type sqlcQuerier interface {
 	// Next, collect api_keys that belong to the prebuilds user but have no token name.
 	// These were most likely created via 'coder login' as the prebuilds user.
 	ExpirePrebuildsAPIKeys(ctx context.Context, now time.Time) error
-	ExpireWorkspaceInvitations(ctx context.Context) error
 	FavoriteWorkspace(ctx context.Context, id uuid.UUID) error
 	FetchMemoryResourceMonitorsByAgentID(ctx context.Context, agentID uuid.UUID) (WorkspaceAgentMemoryResourceMonitor, error)
 	FetchMemoryResourceMonitorsUpdatedAfter(ctx context.Context, updatedAt time.Time) ([]WorkspaceAgentMemoryResourceMonitor, error)
@@ -298,7 +292,6 @@ type sqlcQuerier interface {
 	// membership status for the prebuilds system user (org membership, group existence, group membership).
 	GetOrganizationsWithPrebuildStatus(ctx context.Context, arg GetOrganizationsWithPrebuildStatusParams) ([]GetOrganizationsWithPrebuildStatusRow, error)
 	GetParameterSchemasByJobID(ctx context.Context, jobID uuid.UUID) ([]ParameterSchema, error)
-	GetPendingWorkspaceInvitationsByEmail(ctx context.Context, email string) ([]WorkspaceInvitation, error)
 	GetPrebuildMetrics(ctx context.Context) ([]GetPrebuildMetricsRow, error)
 	GetPrebuildsSettings(ctx context.Context) (string, error)
 	GetPresetByID(ctx context.Context, presetID uuid.UUID) (GetPresetByIDRow, error)
@@ -525,13 +518,6 @@ type sqlcQuerier interface {
 	GetWorkspaceByOwnerIDAndName(ctx context.Context, arg GetWorkspaceByOwnerIDAndNameParams) (Workspace, error)
 	GetWorkspaceByResourceID(ctx context.Context, resourceID uuid.UUID) (Workspace, error)
 	GetWorkspaceByWorkspaceAppID(ctx context.Context, workspaceAppID uuid.UUID) (Workspace, error)
-	GetWorkspaceCollaborationsByUserID(ctx context.Context, userID uuid.UUID) ([]WorkspaceCollaborator, error)
-	GetWorkspaceCollaboratorByID(ctx context.Context, id uuid.UUID) (WorkspaceCollaborator, error)
-	GetWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg GetWorkspaceCollaboratorByUserAndWorkspaceParams) (WorkspaceCollaborator, error)
-	GetWorkspaceCollaboratorsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]WorkspaceCollaborator, error)
-	GetWorkspaceInvitationByID(ctx context.Context, id uuid.UUID) (WorkspaceInvitation, error)
-	GetWorkspaceInvitationByToken(ctx context.Context, token string) (WorkspaceInvitation, error)
-	GetWorkspaceInvitationsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]WorkspaceInvitation, error)
 	GetWorkspaceModulesByJobID(ctx context.Context, jobID uuid.UUID) ([]WorkspaceModule, error)
 	GetWorkspaceModulesCreatedAfter(ctx context.Context, createdAt time.Time) ([]WorkspaceModule, error)
 	GetWorkspaceProxies(ctx context.Context) ([]WorkspaceProxy, error)
@@ -767,10 +753,8 @@ type sqlcQuerier interface {
 	UpdateWorkspaceBuildDeadlineByID(ctx context.Context, arg UpdateWorkspaceBuildDeadlineByIDParams) error
 	UpdateWorkspaceBuildFlagsByID(ctx context.Context, arg UpdateWorkspaceBuildFlagsByIDParams) error
 	UpdateWorkspaceBuildProvisionerStateByID(ctx context.Context, arg UpdateWorkspaceBuildProvisionerStateByIDParams) error
-	UpdateWorkspaceCollaboratorAccessLevel(ctx context.Context, arg UpdateWorkspaceCollaboratorAccessLevelParams) (WorkspaceCollaborator, error)
 	UpdateWorkspaceDeletedByID(ctx context.Context, arg UpdateWorkspaceDeletedByIDParams) error
 	UpdateWorkspaceDormantDeletingAt(ctx context.Context, arg UpdateWorkspaceDormantDeletingAtParams) (WorkspaceTable, error)
-	UpdateWorkspaceInvitationStatus(ctx context.Context, arg UpdateWorkspaceInvitationStatusParams) (WorkspaceInvitation, error)
 	UpdateWorkspaceLastUsedAt(ctx context.Context, arg UpdateWorkspaceLastUsedAtParams) error
 	UpdateWorkspaceNextStartAt(ctx context.Context, arg UpdateWorkspaceNextStartAtParams) error
 	// This allows editing the properties of a workspace proxy.

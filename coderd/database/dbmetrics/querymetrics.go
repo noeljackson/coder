@@ -302,20 +302,6 @@ func (m queryMetricsStore) CreateUserSecret(ctx context.Context, arg database.Cr
 	return r0, r1
 }
 
-func (m queryMetricsStore) CreateWorkspaceCollaborator(ctx context.Context, arg database.CreateWorkspaceCollaboratorParams) (database.WorkspaceCollaborator, error) {
-	start := time.Now()
-	r0, r1 := m.s.CreateWorkspaceCollaborator(ctx, arg)
-	m.queryLatencies.WithLabelValues("CreateWorkspaceCollaborator").Observe(time.Since(start).Seconds())
-	return r0, r1
-}
-
-func (m queryMetricsStore) CreateWorkspaceInvitation(ctx context.Context, arg database.CreateWorkspaceInvitationParams) (database.WorkspaceInvitation, error) {
-	start := time.Now()
-	r0, r1 := m.s.CreateWorkspaceInvitation(ctx, arg)
-	m.queryLatencies.WithLabelValues("CreateWorkspaceInvitation").Observe(time.Since(start).Seconds())
-	return r0, r1
-}
-
 func (m queryMetricsStore) CustomRoles(ctx context.Context, arg database.CustomRolesParams) ([]database.CustomRole, error) {
 	start := time.Now()
 	r0, r1 := m.s.CustomRoles(ctx, arg)
@@ -659,27 +645,6 @@ func (m queryMetricsStore) DeleteWorkspaceAgentPortSharesByTemplate(ctx context.
 	return r0
 }
 
-func (m queryMetricsStore) DeleteWorkspaceCollaborator(ctx context.Context, id uuid.UUID) error {
-	start := time.Now()
-	r0 := m.s.DeleteWorkspaceCollaborator(ctx, id)
-	m.queryLatencies.WithLabelValues("DeleteWorkspaceCollaborator").Observe(time.Since(start).Seconds())
-	return r0
-}
-
-func (m queryMetricsStore) DeleteWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg database.DeleteWorkspaceCollaboratorByUserAndWorkspaceParams) error {
-	start := time.Now()
-	r0 := m.s.DeleteWorkspaceCollaboratorByUserAndWorkspace(ctx, arg)
-	m.queryLatencies.WithLabelValues("DeleteWorkspaceCollaboratorByUserAndWorkspace").Observe(time.Since(start).Seconds())
-	return r0
-}
-
-func (m queryMetricsStore) DeleteWorkspaceInvitation(ctx context.Context, id uuid.UUID) error {
-	start := time.Now()
-	r0 := m.s.DeleteWorkspaceInvitation(ctx, id)
-	m.queryLatencies.WithLabelValues("DeleteWorkspaceInvitation").Observe(time.Since(start).Seconds())
-	return r0
-}
-
 func (m queryMetricsStore) DeleteWorkspaceSubAgentByID(ctx context.Context, id uuid.UUID) error {
 	start := time.Now()
 	r0 := m.s.DeleteWorkspaceSubAgentByID(ctx, id)
@@ -709,13 +674,6 @@ func (m queryMetricsStore) ExpirePrebuildsAPIKeys(ctx context.Context, now time.
 	r0 := m.s.ExpirePrebuildsAPIKeys(ctx, now)
 	m.queryLatencies.WithLabelValues("ExpirePrebuildsAPIKeys").Observe(time.Since(start).Seconds())
 	m.queryCounts.WithLabelValues(httpmw.ExtractHTTPRoute(ctx), httpmw.ExtractHTTPMethod(ctx), "ExpirePrebuildsAPIKeys").Inc()
-	return r0
-}
-
-func (m queryMetricsStore) ExpireWorkspaceInvitations(ctx context.Context) error {
-	start := time.Now()
-	r0 := m.s.ExpireWorkspaceInvitations(ctx)
-	m.queryLatencies.WithLabelValues("ExpireWorkspaceInvitations").Observe(time.Since(start).Seconds())
 	return r0
 }
 
@@ -1508,13 +1466,6 @@ func (m queryMetricsStore) GetParameterSchemasByJobID(ctx context.Context, jobID
 	r0, r1 := m.s.GetParameterSchemasByJobID(ctx, jobID)
 	m.queryLatencies.WithLabelValues("GetParameterSchemasByJobID").Observe(time.Since(start).Seconds())
 	m.queryCounts.WithLabelValues(httpmw.ExtractHTTPRoute(ctx), httpmw.ExtractHTTPMethod(ctx), "GetParameterSchemasByJobID").Inc()
-	return r0, r1
-}
-
-func (m queryMetricsStore) GetPendingWorkspaceInvitationsByEmail(ctx context.Context, email string) ([]database.WorkspaceInvitation, error) {
-	start := time.Now()
-	r0, r1 := m.s.GetPendingWorkspaceInvitationsByEmail(ctx, email)
-	m.queryLatencies.WithLabelValues("GetPendingWorkspaceInvitationsByEmail").Observe(time.Since(start).Seconds())
 	return r0, r1
 }
 
@@ -2555,55 +2506,6 @@ func (m queryMetricsStore) GetWorkspaceByWorkspaceAppID(ctx context.Context, wor
 	r0, r1 := m.s.GetWorkspaceByWorkspaceAppID(ctx, workspaceAppID)
 	m.queryLatencies.WithLabelValues("GetWorkspaceByWorkspaceAppID").Observe(time.Since(start).Seconds())
 	m.queryCounts.WithLabelValues(httpmw.ExtractHTTPRoute(ctx), httpmw.ExtractHTTPMethod(ctx), "GetWorkspaceByWorkspaceAppID").Inc()
-	return r0, r1
-}
-
-func (m queryMetricsStore) GetWorkspaceCollaborationsByUserID(ctx context.Context, userID uuid.UUID) ([]database.WorkspaceCollaborator, error) {
-	start := time.Now()
-	r0, r1 := m.s.GetWorkspaceCollaborationsByUserID(ctx, userID)
-	m.queryLatencies.WithLabelValues("GetWorkspaceCollaborationsByUserID").Observe(time.Since(start).Seconds())
-	return r0, r1
-}
-
-func (m queryMetricsStore) GetWorkspaceCollaboratorByID(ctx context.Context, id uuid.UUID) (database.WorkspaceCollaborator, error) {
-	start := time.Now()
-	r0, r1 := m.s.GetWorkspaceCollaboratorByID(ctx, id)
-	m.queryLatencies.WithLabelValues("GetWorkspaceCollaboratorByID").Observe(time.Since(start).Seconds())
-	return r0, r1
-}
-
-func (m queryMetricsStore) GetWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg database.GetWorkspaceCollaboratorByUserAndWorkspaceParams) (database.WorkspaceCollaborator, error) {
-	start := time.Now()
-	r0, r1 := m.s.GetWorkspaceCollaboratorByUserAndWorkspace(ctx, arg)
-	m.queryLatencies.WithLabelValues("GetWorkspaceCollaboratorByUserAndWorkspace").Observe(time.Since(start).Seconds())
-	return r0, r1
-}
-
-func (m queryMetricsStore) GetWorkspaceCollaboratorsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]database.WorkspaceCollaborator, error) {
-	start := time.Now()
-	r0, r1 := m.s.GetWorkspaceCollaboratorsByWorkspaceID(ctx, workspaceID)
-	m.queryLatencies.WithLabelValues("GetWorkspaceCollaboratorsByWorkspaceID").Observe(time.Since(start).Seconds())
-	return r0, r1
-}
-
-func (m queryMetricsStore) GetWorkspaceInvitationByID(ctx context.Context, id uuid.UUID) (database.WorkspaceInvitation, error) {
-	start := time.Now()
-	r0, r1 := m.s.GetWorkspaceInvitationByID(ctx, id)
-	m.queryLatencies.WithLabelValues("GetWorkspaceInvitationByID").Observe(time.Since(start).Seconds())
-	return r0, r1
-}
-
-func (m queryMetricsStore) GetWorkspaceInvitationByToken(ctx context.Context, token string) (database.WorkspaceInvitation, error) {
-	start := time.Now()
-	r0, r1 := m.s.GetWorkspaceInvitationByToken(ctx, token)
-	m.queryLatencies.WithLabelValues("GetWorkspaceInvitationByToken").Observe(time.Since(start).Seconds())
-	return r0, r1
-}
-
-func (m queryMetricsStore) GetWorkspaceInvitationsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]database.WorkspaceInvitation, error) {
-	start := time.Now()
-	r0, r1 := m.s.GetWorkspaceInvitationsByWorkspaceID(ctx, workspaceID)
-	m.queryLatencies.WithLabelValues("GetWorkspaceInvitationsByWorkspaceID").Observe(time.Since(start).Seconds())
 	return r0, r1
 }
 
@@ -4110,13 +4012,6 @@ func (m queryMetricsStore) UpdateWorkspaceBuildProvisionerStateByID(ctx context.
 	return r0
 }
 
-func (m queryMetricsStore) UpdateWorkspaceCollaboratorAccessLevel(ctx context.Context, arg database.UpdateWorkspaceCollaboratorAccessLevelParams) (database.WorkspaceCollaborator, error) {
-	start := time.Now()
-	r0, r1 := m.s.UpdateWorkspaceCollaboratorAccessLevel(ctx, arg)
-	m.queryLatencies.WithLabelValues("UpdateWorkspaceCollaboratorAccessLevel").Observe(time.Since(start).Seconds())
-	return r0, r1
-}
-
 func (m queryMetricsStore) UpdateWorkspaceDeletedByID(ctx context.Context, arg database.UpdateWorkspaceDeletedByIDParams) error {
 	start := time.Now()
 	r0 := m.s.UpdateWorkspaceDeletedByID(ctx, arg)
@@ -4130,13 +4025,6 @@ func (m queryMetricsStore) UpdateWorkspaceDormantDeletingAt(ctx context.Context,
 	r0, r1 := m.s.UpdateWorkspaceDormantDeletingAt(ctx, arg)
 	m.queryLatencies.WithLabelValues("UpdateWorkspaceDormantDeletingAt").Observe(time.Since(start).Seconds())
 	m.queryCounts.WithLabelValues(httpmw.ExtractHTTPRoute(ctx), httpmw.ExtractHTTPMethod(ctx), "UpdateWorkspaceDormantDeletingAt").Inc()
-	return r0, r1
-}
-
-func (m queryMetricsStore) UpdateWorkspaceInvitationStatus(ctx context.Context, arg database.UpdateWorkspaceInvitationStatusParams) (database.WorkspaceInvitation, error) {
-	start := time.Now()
-	r0, r1 := m.s.UpdateWorkspaceInvitationStatus(ctx, arg)
-	m.queryLatencies.WithLabelValues("UpdateWorkspaceInvitationStatus").Observe(time.Since(start).Seconds())
 	return r0, r1
 }
 

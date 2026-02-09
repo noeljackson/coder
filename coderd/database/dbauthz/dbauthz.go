@@ -1670,15 +1670,6 @@ func (q *querier) CreateUserSecret(ctx context.Context, arg database.CreateUserS
 	}
 	return q.db.CreateUserSecret(ctx, arg)
 }
-
-func (q *querier) CreateWorkspaceCollaborator(ctx context.Context, arg database.CreateWorkspaceCollaboratorParams) (database.WorkspaceCollaborator, error) {
-	panic("not implemented")
-}
-
-func (q *querier) CreateWorkspaceInvitation(ctx context.Context, arg database.CreateWorkspaceInvitationParams) (database.WorkspaceInvitation, error) {
-	panic("not implemented")
-}
-
 // TODO: Handle org scoped lookups
 func (q *querier) CustomRoles(ctx context.Context, arg database.CustomRolesParams) ([]database.CustomRole, error) {
 	roleObject := rbac.ResourceAssignRole
@@ -2039,18 +2030,6 @@ func (q *querier) DeleteWorkspaceAgentPortSharesByTemplate(ctx context.Context, 
 	return q.db.DeleteWorkspaceAgentPortSharesByTemplate(ctx, templateID)
 }
 
-func (q *querier) DeleteWorkspaceCollaborator(ctx context.Context, id uuid.UUID) error {
-	panic("not implemented")
-}
-
-func (q *querier) DeleteWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg database.DeleteWorkspaceCollaboratorByUserAndWorkspaceParams) error {
-	panic("not implemented")
-}
-
-func (q *querier) DeleteWorkspaceInvitation(ctx context.Context, id uuid.UUID) error {
-	panic("not implemented")
-}
-
 func (q *querier) DeleteWorkspaceSubAgentByID(ctx context.Context, id uuid.UUID) error {
 	workspace, err := q.db.GetWorkspaceByAgentID(ctx, id)
 	if err != nil {
@@ -2083,10 +2062,6 @@ func (q *querier) ExpirePrebuildsAPIKeys(ctx context.Context, now time.Time) err
 		return err
 	}
 	return q.db.ExpirePrebuildsAPIKeys(ctx, now)
-}
-
-func (q *querier) ExpireWorkspaceInvitations(ctx context.Context) error {
-	panic("not implemented")
 }
 
 func (q *querier) FavoriteWorkspace(ctx context.Context, id uuid.UUID) error {
@@ -2835,10 +2810,6 @@ func (q *querier) GetParameterSchemasByJobID(ctx context.Context, jobID uuid.UUI
 		return nil, err
 	}
 	return q.db.GetParameterSchemasByJobID(ctx, jobID)
-}
-
-func (q *querier) GetPendingWorkspaceInvitationsByEmail(ctx context.Context, email string) ([]database.WorkspaceInvitation, error) {
-	panic("not implemented")
 }
 
 func (q *querier) GetPrebuildMetrics(ctx context.Context) ([]database.GetPrebuildMetricsRow, error) {
@@ -4003,34 +3974,6 @@ func (q *querier) GetWorkspaceByResourceID(ctx context.Context, resourceID uuid.
 
 func (q *querier) GetWorkspaceByWorkspaceAppID(ctx context.Context, workspaceAppID uuid.UUID) (database.Workspace, error) {
 	return fetch(q.log, q.auth, q.db.GetWorkspaceByWorkspaceAppID)(ctx, workspaceAppID)
-}
-
-func (q *querier) GetWorkspaceCollaborationsByUserID(ctx context.Context, userID uuid.UUID) ([]database.WorkspaceCollaborator, error) {
-	panic("not implemented")
-}
-
-func (q *querier) GetWorkspaceCollaboratorByID(ctx context.Context, id uuid.UUID) (database.WorkspaceCollaborator, error) {
-	panic("not implemented")
-}
-
-func (q *querier) GetWorkspaceCollaboratorByUserAndWorkspace(ctx context.Context, arg database.GetWorkspaceCollaboratorByUserAndWorkspaceParams) (database.WorkspaceCollaborator, error) {
-	panic("not implemented")
-}
-
-func (q *querier) GetWorkspaceCollaboratorsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]database.WorkspaceCollaborator, error) {
-	panic("not implemented")
-}
-
-func (q *querier) GetWorkspaceInvitationByID(ctx context.Context, id uuid.UUID) (database.WorkspaceInvitation, error) {
-	panic("not implemented")
-}
-
-func (q *querier) GetWorkspaceInvitationByToken(ctx context.Context, token string) (database.WorkspaceInvitation, error) {
-	panic("not implemented")
-}
-
-func (q *querier) GetWorkspaceInvitationsByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]database.WorkspaceInvitation, error) {
-	panic("not implemented")
 }
 
 func (q *querier) GetWorkspaceModulesByJobID(ctx context.Context, jobID uuid.UUID) ([]database.WorkspaceModule, error) {
@@ -5972,10 +5915,6 @@ func (q *querier) UpdateWorkspaceBuildProvisionerStateByID(ctx context.Context, 
 	return q.db.UpdateWorkspaceBuildProvisionerStateByID(ctx, arg)
 }
 
-func (q *querier) UpdateWorkspaceCollaboratorAccessLevel(ctx context.Context, arg database.UpdateWorkspaceCollaboratorAccessLevelParams) (database.WorkspaceCollaborator, error) {
-	panic("not implemented")
-}
-
 // Deprecated: Use SoftDeleteWorkspaceByID
 func (q *querier) UpdateWorkspaceDeletedByID(ctx context.Context, arg database.UpdateWorkspaceDeletedByIDParams) error {
 	// TODO deleteQ me, placeholder for database.Store
@@ -5995,10 +5934,6 @@ func (q *querier) UpdateWorkspaceDormantDeletingAt(ctx context.Context, arg data
 		return w.WorkspaceTable(), nil
 	}
 	return updateWithReturn(q.log, q.auth, fetch, q.db.UpdateWorkspaceDormantDeletingAt)(ctx, arg)
-}
-
-func (q *querier) UpdateWorkspaceInvitationStatus(ctx context.Context, arg database.UpdateWorkspaceInvitationStatusParams) (database.WorkspaceInvitation, error) {
-	panic("not implemented")
 }
 
 func (q *querier) UpdateWorkspaceLastUsedAt(ctx context.Context, arg database.UpdateWorkspaceLastUsedAtParams) error {
