@@ -670,6 +670,17 @@ func New(options *Options) *API {
 		options.Logger.Fatal(ctx, "failed to initialize site handler", slog.Error(err))
 	}
 	api.SiteHandler.Experiments.Store(&experiments)
+	api.SiteHandler.RegionsFetcher = func(ctx context.Context) (any, error) {
+		// Use system context for database access, matching the regions HTTP handler.
+		ctx = dbauthz.AsSystemRestricted(ctx)
+		region, err := api.PrimaryRegion(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return codersdk.RegionsResponse[codersdk.Region]{
+			Regions: []codersdk.Region{region},
+		}, nil
+	}
 
 	if options.UpdateCheckOptions != nil {
 		api.updateChecker = updatecheck.New(
