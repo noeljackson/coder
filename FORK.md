@@ -24,11 +24,13 @@ from a previous feature but are no longer used. The migration
 Sends workspace invitation emails via [Resend](https://resend.com).
 
 **Configuration:**
+
 - `RESEND_API_KEY` - API key from Resend
 - `RESEND_FROM_EMAIL` - Sender email address
 - `RESEND_FROM_NAME` - Sender display name
 
 **Files:**
+
 - `coderd/email/resend.go` - Resend client implementation
 
 ## CI/CD
@@ -38,6 +40,7 @@ Sends workspace invitation emails via [Resend](https://resend.com).
 A daily GitHub Action keeps the fork up to date with upstream.
 
 **How it works:**
+
 1. Runs daily at 06:00 UTC (also supports manual trigger)
 2. Fetches `upstream/main` and checks for new commits
 3. If no new commits, exits early
@@ -49,6 +52,7 @@ A daily GitHub Action keeps the fork up to date with upstream.
 **Manual trigger:** Go to Actions > "Sync Upstream" > "Run workflow".
 
 **Files:**
+
 - `.github/workflows/sync-upstream.yaml`
 
 ### Docker Build Workflow
@@ -56,6 +60,7 @@ A daily GitHub Action keeps the fork up to date with upstream.
 Custom GitHub Actions workflow for multi-arch Docker builds.
 
 **Features:**
+
 - Builds linux/amd64 and linux/arm64
 - Auto-detects version via `scripts/version.sh` (do not manually tag)
 - Publishes to `ghcr.io/noeljackson/coder`
@@ -63,10 +68,12 @@ Custom GitHub Actions workflow for multi-arch Docker builds.
 - Alpine-based image with Terraform pre-installed
 
 **Trigger:**
+
 - Push to `main` branch (including automated sync merges)
 - Manual dispatch with optional version override
 
 **Files:**
+
 - `.github/workflows/build-release.yaml`
 
 ### Artifact Sync: Docker + Helm
@@ -77,6 +84,7 @@ platform resolves a version that has a Docker image but no corresponding Helm
 chart, causing Terraform to fail with "Unable to locate chart."
 
 **How it works:**
+
 1. Docker image is pushed with version + SHA tags only (no `latest`)
 2. Helm chart is packaged and pushed to `oci://ghcr.io/noeljackson/chart`
 3. Only after the Helm chart push succeeds, the Docker image is retagged as

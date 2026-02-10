@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"golang.org/x/xerrors"
 )
 
 // ResendClient handles sending emails via Resend API.
@@ -48,12 +50,12 @@ func (c *ResendClient) SendEmail(ctx context.Context, to, subject, htmlBody, tex
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("failed to marshal email payload: %w", err)
+		return xerrors.Errorf("failed to marshal email payload: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.resend.com/emails", bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return xerrors.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
@@ -61,7 +63,7 @@ func (c *ResendClient) SendEmail(ctx context.Context, to, subject, htmlBody, tex
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
+		return xerrors.Errorf("failed to send email: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -72,9 +74,9 @@ func (c *ResendClient) SendEmail(ctx context.Context, to, subject, htmlBody, tex
 			Name       string `json:"name"`
 		}
 		if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
-			return fmt.Errorf("resend API error (status %d)", resp.StatusCode)
+			return xerrors.Errorf("resend API error (status %d)", resp.StatusCode)
 		}
-		return fmt.Errorf("resend API error: %s - %s", errResp.Name, errResp.Message)
+		return xerrors.Errorf("resend API error: %s - %s", errResp.Name, errResp.Message)
 	}
 
 	return nil

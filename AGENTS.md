@@ -120,12 +120,14 @@ Don't use `git push --force` unless explicitly requested.
 This is a fork of [coder/coder](https://github.com/coder/coder). See `FORK.md` for documentation of our custom features.
 
 **When merging upstream:**
+
 - Always preserve our custom code during conflict resolution
 - Key files with fork customizations:
   - `coderd/email/resend.go` - Email integration
   - `.github/workflows/build-release.yaml` - Custom CI/CD
 
 **When adding fork features:**
+
 - Update `FORK.md` to document new features, API endpoints, or configuration
 - Keep fork features isolated in dedicated files when possible
 - Add database tables to the schema section in `FORK.md`
