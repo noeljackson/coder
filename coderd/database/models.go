@@ -5024,6 +5024,28 @@ type WorkspaceBuildTable struct {
 	HasExternalAgent        sql.NullBool        `db:"has_external_agent" json:"has_external_agent"`
 }
 
+type WorkspaceCollaborator struct {
+	ID          uuid.UUID     `db:"id" json:"id"`
+	WorkspaceID uuid.UUID     `db:"workspace_id" json:"workspace_id"`
+	UserID      uuid.UUID     `db:"user_id" json:"user_id"`
+	AccessLevel string        `db:"access_level" json:"access_level"`
+	InvitedBy   uuid.NullUUID `db:"invited_by" json:"invited_by"`
+	CreatedAt   time.Time     `db:"created_at" json:"created_at"`
+}
+
+type WorkspaceInvitation struct {
+	ID          uuid.UUID    `db:"id" json:"id"`
+	WorkspaceID uuid.UUID    `db:"workspace_id" json:"workspace_id"`
+	InviterID   uuid.UUID    `db:"inviter_id" json:"inviter_id"`
+	Email       string       `db:"email" json:"email"`
+	AccessLevel string       `db:"access_level" json:"access_level"`
+	Token       string       `db:"token" json:"token"`
+	Status      string       `db:"status" json:"status"`
+	ExpiresAt   time.Time    `db:"expires_at" json:"expires_at"`
+	CreatedAt   time.Time    `db:"created_at" json:"created_at"`
+	RespondedAt sql.NullTime `db:"responded_at" json:"responded_at"`
+}
+
 type WorkspaceLatestBuild struct {
 	ID                      uuid.UUID            `db:"id" json:"id"`
 	WorkspaceID             uuid.UUID            `db:"workspace_id" json:"workspace_id"`

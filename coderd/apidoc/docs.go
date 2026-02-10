@@ -14674,6 +14674,12 @@ const docTemplate = `{
                 "logging": {
                     "$ref": "#/definitions/codersdk.LoggingConfig"
                 },
+                "max_workspaces_per_organization": {
+                    "type": "integer"
+                },
+                "max_workspaces_per_user": {
+                    "type": "integer"
+                },
                 "metrics_cache_refresh_interval": {
                     "type": "integer"
                 },

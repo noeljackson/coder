@@ -1451,7 +1451,6 @@ func (q *querier) authorizeProvisionerJob(ctx context.Context, job database.Prov
 	return nil
 }
 
-
 func (q *querier) AcquireLock(ctx context.Context, id int64) error {
 	return q.db.AcquireLock(ctx, id)
 }
@@ -1670,6 +1669,7 @@ func (q *querier) CreateUserSecret(ctx context.Context, arg database.CreateUserS
 	}
 	return q.db.CreateUserSecret(ctx, arg)
 }
+
 // TODO: Handle org scoped lookups
 func (q *querier) CustomRoles(ctx context.Context, arg database.CustomRolesParams) ([]database.CustomRole, error) {
 	roleObject := rbac.ResourceAssignRole

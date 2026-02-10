@@ -326,6 +326,8 @@ curl -X GET http://coder-server:8080/api/v2/deployment/config \
       ],
       "stackdriver": "string"
     },
+    "max_workspaces_per_organization": 0,
+    "max_workspaces_per_user": 0,
     "metrics_cache_refresh_interval": 0,
     "notifications": {
       "dispatch_timeout": 0,

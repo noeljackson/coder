@@ -582,6 +582,13 @@ userQuietHoursSchedule:
 # not use workspace names in resource identifiers, or if you understand the risks.
 # (default: false, type: bool)
 allowWorkspaceRenames: false
+# Maximum number of workspaces a single user can create. Set to 0 for unlimited.
+# (default: 0, type: int)
+maxWorkspacesPerUser: 0
+# Maximum total number of workspaces across all users in the organization. Set to
+# 0 for unlimited.
+# (default: 0, type: int)
+maxWorkspacesPerOrganization: 0
 # Configure how emails are sent.
 email:
   # The sender's address to use.

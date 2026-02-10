@@ -63,6 +63,14 @@ OPTIONS:
           Separate multiple experiments with commas, or enter '*' to opt-in to
           all available experiments.
 
+      --max-workspaces-per-organization int, $CODER_MAX_WORKSPACES_PER_ORGANIZATION (default: 0)
+          Maximum total number of workspaces across all users in the
+          organization. Set to 0 for unlimited.
+
+      --max-workspaces-per-user int, $CODER_MAX_WORKSPACES_PER_USER (default: 0)
+          Maximum number of workspaces a single user can create. Set to 0 for
+          unlimited.
+
       --postgres-auth password|awsiamrds, $CODER_PG_AUTH (default: password)
           Type of auth to use when connecting to postgres. For AWS RDS, using
           IAM authentication (awsiamrds) is recommended.

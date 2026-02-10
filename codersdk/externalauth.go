@@ -207,4 +207,3 @@ func (c *Client) ListExternalAuths(ctx context.Context) (ListUserExternalAuthRes
 	var extAuth ListUserExternalAuthResponse
 	return extAuth, json.NewDecoder(res.Body).Decode(&extAuth)
 }
-

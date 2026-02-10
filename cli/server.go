@@ -687,7 +687,7 @@ func (r *RootCmd) Server(newAPI func(context.Context, *coderd.Options) (*coderd.
 				MaxWorkspacesPerUser:         vals.MaxWorkspacesPerUser.Value(),
 				MaxWorkspacesPerOrganization: vals.MaxWorkspacesPerOrganization.Value(),
 				Entitlements:                 entitlements.New(),
-				NotificationsEnqueuer: notifications.NewNoopEnqueuer(), // Changed further down if notifications enabled.
+				NotificationsEnqueuer:        notifications.NewNoopEnqueuer(), // Changed further down if notifications enabled.
 			}
 			if httpServers.TLSConfig != nil {
 				options.TLSCertificates = httpServers.TLSConfig.Certificates

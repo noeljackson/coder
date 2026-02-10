@@ -2824,6 +2824,8 @@ CreateWorkspaceRequest provides options for creating a new workspace. Only one o
       ],
       "stackdriver": "string"
     },
+    "max_workspaces_per_organization": 0,
+    "max_workspaces_per_user": 0,
     "metrics_cache_refresh_interval": 0,
     "notifications": {
       "dispatch_timeout": 0,
@@ -3378,6 +3380,8 @@ CreateWorkspaceRequest provides options for creating a new workspace. Only one o
     ],
     "stackdriver": "string"
   },
+  "max_workspaces_per_organization": 0,
+  "max_workspaces_per_user": 0,
   "metrics_cache_refresh_interval": 0,
   "notifications": {
     "dispatch_timeout": 0,
@@ -3685,6 +3689,8 @@ CreateWorkspaceRequest provides options for creating a new workspace. Only one o
 | `http_cookies`                       | [codersdk.HTTPCookieConfig](#codersdkhttpcookieconfig)                                               | false    |              |                                                                    |
 | `job_hang_detector_interval`         | integer                                                                                              | false    |              |                                                                    |
 | `logging`                            | [codersdk.LoggingConfig](#codersdkloggingconfig)                                                     | false    |              |                                                                    |
+| `max_workspaces_per_organization`    | integer                                                                                              | false    |              |                                                                    |
+| `max_workspaces_per_user`            | integer                                                                                              | false    |              |                                                                    |
 | `metrics_cache_refresh_interval`     | integer                                                                                              | false    |              |                                                                    |
 | `notifications`                      | [codersdk.NotificationsConfig](#codersdknotificationsconfig)                                         | false    |              |                                                                    |
 | `oauth2`                             | [codersdk.OAuth2Config](#codersdkoauth2config)                                                       | false    |              |                                                                    |
