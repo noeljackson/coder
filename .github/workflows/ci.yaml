@@ -349,6 +349,9 @@ jobs:
       - name: Setup Go
         uses: ./.github/actions/setup-go
 
+      - name: Setup Terraform
+        uses: ./.github/actions/setup-tf
+
       - name: Install shfmt
         run: ./.github/scripts/retry.sh -- go install mvdan.cc/sh/v3/cmd/shfmt@v3.7.0
 
