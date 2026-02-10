@@ -123,7 +123,6 @@ This is a fork of [coder/coder](https://github.com/coder/coder). See `FORK.md` f
 
 - Always preserve our custom code during conflict resolution
 - Key files with fork customizations:
-  - `coderd/email/resend.go` - Email integration
   - `.github/workflows/build-release.yaml` - Custom CI/CD
 
 **When adding fork features:**

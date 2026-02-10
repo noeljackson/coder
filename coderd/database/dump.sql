@@ -2718,31 +2718,6 @@ CREATE VIEW workspace_build_with_user AS
 
 COMMENT ON VIEW workspace_build_with_user IS 'Joins in the username + avatar url of the initiated by user.';
 
-CREATE TABLE workspace_collaborators (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    workspace_id uuid NOT NULL,
-    user_id uuid NOT NULL,
-    access_level text DEFAULT 'readonly'::text NOT NULL,
-    invited_by uuid,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT workspace_collaborators_access_level_check CHECK ((access_level = ANY (ARRAY['readonly'::text, 'use'::text, 'admin'::text])))
-);
-
-CREATE TABLE workspace_invitations (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    workspace_id uuid NOT NULL,
-    inviter_id uuid NOT NULL,
-    email text NOT NULL,
-    access_level text DEFAULT 'readonly'::text NOT NULL,
-    token text NOT NULL,
-    status text DEFAULT 'pending'::text NOT NULL,
-    expires_at timestamp with time zone NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    responded_at timestamp with time zone,
-    CONSTRAINT workspace_invitations_access_level_check CHECK ((access_level = ANY (ARRAY['readonly'::text, 'use'::text, 'admin'::text]))),
-    CONSTRAINT workspace_invitations_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text, 'expired'::text, 'canceled'::text])))
-);
-
 CREATE TABLE workspaces (
     id uuid NOT NULL,
     created_at timestamp with time zone NOT NULL,
@@ -3271,18 +3246,6 @@ ALTER TABLE ONLY workspace_builds
 ALTER TABLE ONLY workspace_builds
     ADD CONSTRAINT workspace_builds_workspace_id_build_number_key UNIQUE (workspace_id, build_number);
 
-ALTER TABLE ONLY workspace_collaborators
-    ADD CONSTRAINT workspace_collaborators_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY workspace_collaborators
-    ADD CONSTRAINT workspace_collaborators_workspace_id_user_id_key UNIQUE (workspace_id, user_id);
-
-ALTER TABLE ONLY workspace_invitations
-    ADD CONSTRAINT workspace_invitations_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY workspace_invitations
-    ADD CONSTRAINT workspace_invitations_token_key UNIQUE (token);
-
 ALTER TABLE ONLY workspace_proxies
     ADD CONSTRAINT workspace_proxies_pkey PRIMARY KEY (id);
 
@@ -3402,16 +3365,6 @@ CREATE UNIQUE INDEX idx_users_username ON users USING btree (username) WHERE (de
 CREATE INDEX idx_workspace_app_statuses_workspace_id_created_at ON workspace_app_statuses USING btree (workspace_id, created_at DESC);
 
 CREATE INDEX idx_workspace_builds_initiator_id ON workspace_builds USING btree (initiator_id);
-
-CREATE INDEX idx_workspace_collaborators_user_id ON workspace_collaborators USING btree (user_id);
-
-CREATE INDEX idx_workspace_collaborators_workspace_id ON workspace_collaborators USING btree (workspace_id);
-
-CREATE INDEX idx_workspace_invitations_email ON workspace_invitations USING btree (email);
-
-CREATE INDEX idx_workspace_invitations_token ON workspace_invitations USING btree (token);
-
-CREATE INDEX idx_workspace_invitations_workspace_id ON workspace_invitations USING btree (workspace_id);
 
 CREATE UNIQUE INDEX notification_messages_dedupe_hash_idx ON notification_messages USING btree (dedupe_hash);
 
@@ -3863,21 +3816,6 @@ ALTER TABLE ONLY workspace_builds
 
 ALTER TABLE ONLY workspace_builds
     ADD CONSTRAINT workspace_builds_workspace_id_fkey FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY workspace_collaborators
-    ADD CONSTRAINT workspace_collaborators_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES users(id) ON DELETE SET NULL;
-
-ALTER TABLE ONLY workspace_collaborators
-    ADD CONSTRAINT workspace_collaborators_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY workspace_collaborators
-    ADD CONSTRAINT workspace_collaborators_workspace_id_fkey FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY workspace_invitations
-    ADD CONSTRAINT workspace_invitations_inviter_id_fkey FOREIGN KEY (inviter_id) REFERENCES users(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY workspace_invitations
-    ADD CONSTRAINT workspace_invitations_workspace_id_fkey FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY workspace_modules
     ADD CONSTRAINT workspace_modules_job_id_fkey FOREIGN KEY (job_id) REFERENCES provisioner_jobs(id) ON DELETE CASCADE;

@@ -15,24 +15,6 @@ The `maybeAutoConsent` function in Codespace automatically grants OAuth consent
 for tenant members during OIDC login. When a user is removed from a tenant,
 their consent is revoked.
 
-The `workspace_invitations` and `workspace_collaborators` database tables exist
-from a previous feature but are no longer used. The migration
-(`000417_workspace_invitations.up.sql`) is preserved for safety.
-
-### Email Integration (Resend)
-
-Sends workspace invitation emails via [Resend](https://resend.com).
-
-**Configuration:**
-
-- `RESEND_API_KEY` - API key from Resend
-- `RESEND_FROM_EMAIL` - Sender email address
-- `RESEND_FROM_NAME` - Sender display name
-
-**Files:**
-
-- `coderd/email/resend.go` - Resend client implementation
-
 ## CI/CD
 
 ### Automated Upstream Sync
