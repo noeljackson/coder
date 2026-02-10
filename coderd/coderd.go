@@ -678,7 +678,8 @@ func New(options *Options) *API {
 	}
 	api.SiteHandler.Experiments.Store(&experiments)
 	api.SiteHandler.RegionsFetcher = func(ctx context.Context) (any, error) {
-		// Use system context for database access, matching the regions HTTP handler.
+		// nolint:gocritic // RegionsFetcher is called during HTML rendering without a user-scoped
+		// context. System access is needed to read the deployment ID and default proxy config.
 		ctx = dbauthz.AsSystemRestricted(ctx)
 		region, err := api.PrimaryRegion(ctx)
 		if err != nil {
