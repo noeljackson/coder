@@ -132,6 +132,65 @@ func TestInjectionFailureProducesCleanHTML(t *testing.T) {
 	assert.Equal(t, "<html></html>", body)
 }
 
+func TestRegionsInjection(t *testing.T) {
+	t.Parallel()
+
+	siteFS := fstest.MapFS{
+		"index.html": &fstest.MapFile{
+			Data: []byte(`<meta property="regions" content="{{ .Regions }}">`),
+		},
+	}
+	db, _ := dbtestutil.NewDB(t)
+	handler, err := site.New(&site.Options{
+		Telemetry: telemetry.NewNoop(),
+		Database:  db,
+		SiteFS:    siteFS,
+	})
+	require.NoError(t, err)
+
+	// Set RegionsFetcher to return a region with a wildcard hostname,
+	// simulating the AGPL coderd wiring.
+	handler.RegionsFetcher = func(_ context.Context) (any, error) {
+		return codersdk.RegionsResponse[codersdk.Region]{
+			Regions: []codersdk.Region{
+				{
+					ID:               uuid.New(),
+					Name:             "primary",
+					DisplayName:      "Default",
+					Healthy:          true,
+					WildcardHostname: "*.apps.coder.test",
+				},
+			},
+		}, nil
+	}
+
+	user := dbgen.User(t, db, database.User{})
+	_, token := dbgen.APIKey(t, db, database.APIKey{
+		UserID:    user.ID,
+		ExpiresAt: time.Now().Add(time.Hour),
+	})
+
+	r := httptest.NewRequest("GET", "/", nil)
+	r.Header.Set(codersdk.SessionTokenHeader, token)
+	rw := httptest.NewRecorder()
+
+	handler.ServeHTTP(rw, r)
+	require.Equal(t, http.StatusOK, rw.Code)
+
+	regionsJSON := html.UnescapeString(rw.Body.String())
+	// Strip the surrounding HTML tag to get just the content attribute value.
+	regionsJSON = strings.TrimPrefix(regionsJSON, `<meta property="regions" content="`)
+	regionsJSON = strings.TrimSuffix(regionsJSON, `">`)
+	require.NotEmpty(t, regionsJSON, "regions metadata should not be empty")
+
+	var regionsResp codersdk.RegionsResponse[codersdk.Region]
+	err = json.Unmarshal([]byte(regionsJSON), &regionsResp)
+	require.NoError(t, err)
+
+	require.Len(t, regionsResp.Regions, 1)
+	require.Equal(t, "*.apps.coder.test", regionsResp.Regions[0].WildcardHostname)
+}
+
 func TestCaching(t *testing.T) {
 	t.Parallel()
 
