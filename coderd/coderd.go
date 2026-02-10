@@ -1085,6 +1085,7 @@ func New(options *Options) *API {
 					r.Patch("/input", api.taskUpdateInput)
 					r.Post("/send", api.taskSend)
 					r.Get("/logs", api.taskLogs)
+					r.Post("/pause", api.pauseTask)
 				})
 			})
 		})
