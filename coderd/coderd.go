@@ -678,6 +678,8 @@ func New(options *Options) *API {
 	}
 	api.SiteHandler.Experiments.Store(&experiments)
 	api.SiteHandler.RegionsFetcher = func(ctx context.Context) (any, error) {
+		// Use system context for database access, matching the regions HTTP handler.
+		ctx = dbauthz.AsSystemRestricted(ctx)
 		region, err := api.PrimaryRegion(ctx)
 		if err != nil {
 			return nil, err
