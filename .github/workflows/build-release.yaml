@@ -192,9 +192,6 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
@@ -202,78 +199,58 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Docker (version + SHA tags only, no latest)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ steps.version.outputs.version }}
-            type=sha,prefix=
-
-      - name: Create Dockerfile
+      - name: Build and push per-arch Docker images
+        env:
+          CODER_IMAGE_BASE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          DOCKER_CLI_EXPERIMENTAL: "enabled"
         run: |
-          cat > Dockerfile.multi <<'EOF'
-          FROM alpine:3.22
+          VERSION="${{ steps.version.outputs.version }}"
 
-          RUN apk add --no-cache \
-              curl \
-              wget \
-              bash \
-              git \
-              openssl \
-              openssh-client \
-              tzdata && \
-            addgroup -g 1000 coder && \
-            adduser -D -s /bin/bash -h /home/coder -u 1000 -G coder coder
+          # Build and push per-arch images using upstream's build_docker.sh
+          # --build-base builds our own base image from scripts/Dockerfile.base
+          for arch in amd64 arm64; do
+            IMAGE_TAG=$(./scripts/build_docker.sh \
+              --arch "$arch" \
+              --version "$VERSION" \
+              --build-base "noeljackson-coder-base:$arch" \
+              --push \
+              "build/linux/$arch/coder_linux_$arch")
+            echo "Built and pushed: $IMAGE_TAG"
+            echo "$IMAGE_TAG" > "build/coder_${arch}.tag"
+          done
 
-          # Install Terraform
-          RUN ARCH="$(arch)"; \
-              if [ "${ARCH}" == "x86_64" ]; then ARCH="amd64"; \
-              elif [ "${ARCH}" == "aarch64" ]; then ARCH="arm64"; fi; \
-              wget -O /tmp/terraform.zip "https://releases.hashicorp.com/terraform/1.13.4/terraform_1.13.4_linux_${ARCH}.zip" && \
-              unzip /tmp/terraform.zip -d /usr/local/bin && \
-              rm -f /tmp/terraform.zip && \
-              chmod +x /usr/local/bin/terraform
-
-          ARG TARGETARCH
-          COPY build/linux/${TARGETARCH}/coder_linux_${TARGETARCH} /opt/coder
-
-          RUN chmod +x /opt/coder
-
-          USER 1000:1000
-          ENV HOME=/home/coder
-          ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt
-          WORKDIR /home/coder
-
-          LABEL org.opencontainers.image.title="Coder AGPL (Codespace Fork)"
-          LABEL org.opencontainers.image.description="Codespace fork of Coder AGPL with custom features"
-          LABEL org.opencontainers.image.source="https://github.com/noeljackson/coder"
-
-          ENTRYPOINT [ "/opt/coder", "server" ]
-          EOF
-
-      - name: Build and push Docker image (version + SHA tags)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile.multi
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Print image info
+      - name: Create and push multi-arch manifest
+        env:
+          CODER_IMAGE_BASE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          DOCKER_CLI_EXPERIMENTAL: "enabled"
         run: |
-          echo "Pushed images (without latest):"
-          echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n'
+          VERSION="${{ steps.version.outputs.version }}"
+          AMD64_TAG=$(cat build/coder_amd64.tag)
+          ARM64_TAG=$(cat build/coder_arm64.tag)
+
+          # Create versioned multi-arch manifest
+          ./scripts/build_docker_multiarch.sh \
+            --version "$VERSION" \
+            --push \
+            "$AMD64_TAG" "$ARM64_TAG"
+
+      - name: Tag Docker image as latest
+        if: github.ref == 'refs/heads/main'
+        env:
+          CODER_IMAGE_BASE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          AMD64_TAG=$(cat build/coder_amd64.tag)
+          ARM64_TAG=$(cat build/coder_arm64.tag)
+
+          ./scripts/build_docker_multiarch.sh \
+            --target "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" \
+            --push \
+            "$AMD64_TAG" "$ARM64_TAG"
 
       - name: Package Helm chart
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          # OCI tags cannot contain '+', replace with '-' for devel builds
           HELM_VERSION="${VERSION//+/-}"
           ./scripts/helm.sh \
             --version "$HELM_VERSION" \
@@ -285,14 +262,3 @@ jobs:
           HELM_VERSION="${VERSION//+/-}"
           echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
           helm push "build/coder_helm_${HELM_VERSION}.tgz" oci://ghcr.io/noeljackson/chart
-
-      - name: Tag Docker image as latest (only after Helm chart is pushed)
-        if: github.ref == 'refs/heads/main'
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          # Docker tags cannot contain '+', replace with '-' (same as metadata-action)
-          DOCKER_TAG="${VERSION//+/-}"
-          docker buildx imagetools create \
-            --tag "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" \
-            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DOCKER_TAG}"
-          echo "Tagged ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${DOCKER_TAG} as latest"
