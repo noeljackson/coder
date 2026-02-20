@@ -3745,6 +3745,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/organizations/{organization}/members/{user}/workspaces/available-users": {
+            "get": {
+                "security": [
+                    {
+                        "CoderSessionToken": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Get users available for workspace creation",
+                "operationId": "get-users-available-for-workspace-creation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Organization ID",
+                        "name": "organization",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID, name, or me",
+                        "name": "user",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit results",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/codersdk.MinimalUser"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/organizations/{organization}/paginated-members": {
             "get": {
                 "security": [
@@ -8386,6 +8449,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/{user}/keys/{keyid}/expire": {
+            "put": {
+                "security": [
+                    {
+                        "CoderSessionToken": []
+                    }
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Expire API key",
+                "operationId": "expire-api-key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID, name, or me",
+                        "name": "user",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "string",
+                        "description": "Key ID",
+                        "name": "keyid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/codersdk.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/codersdk.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{user}/login-type": {
             "get": {
                 "security": [
@@ -12303,6 +12414,9 @@ const docTemplate = `{
                 "api_key_id": {
                     "type": "string"
                 },
+                "client": {
+                    "type": "string"
+                },
                 "ended_at": {
                     "type": "string",
                     "format": "date-time"
@@ -13502,7 +13616,10 @@ const docTemplate = `{
                 "cli",
                 "ssh_connection",
                 "vscode_connection",
-                "jetbrains_connection"
+                "jetbrains_connection",
+                "task_auto_pause",
+                "task_manual_pause",
+                "task_resume"
             ],
             "x-enum-varnames": [
                 "BuildReasonInitiator",
@@ -13513,7 +13630,10 @@ const docTemplate = `{
                 "BuildReasonCLI",
                 "BuildReasonSSHConnection",
                 "BuildReasonVSCodeConnection",
-                "BuildReasonJetbrainsConnection"
+                "BuildReasonJetbrainsConnection",
+                "BuildReasonTaskAutoPause",
+                "BuildReasonTaskManualPause",
+                "BuildReasonTaskResume"
             ]
         },
         "codersdk.CORSBehavior": {
@@ -15252,10 +15372,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/codersdk.Entitlement"
                 },
                 "limit": {
-                    "type": "integer"
-                },
-                "soft_limit": {
-                    "description": "SoftLimit is the soft limit of the feature, and is only used for showing\nincluded limits in the dashboard. No license validation or warnings are\ngenerated from this value.",
                     "type": "integer"
                 },
                 "usage_period": {
@@ -18924,6 +19040,9 @@ const docTemplate = `{
                 },
                 "default_ttl_ms": {
                     "type": "integer"
+                },
+                "deleted": {
+                    "type": "boolean"
                 },
                 "deprecated": {
                     "type": "boolean"
