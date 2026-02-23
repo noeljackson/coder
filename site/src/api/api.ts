@@ -569,6 +569,28 @@ class ApiMethods {
 		return response.data;
 	};
 
+	/**
+	 * Get users for workspace owner selection. Requires
+	 * permission to create workspaces for other users in the
+	 * organization. Returns minimal user data (no email, roles,
+	 * etc.).
+	 */
+	getWorkspaceAvailableUsers = async (
+		organizationId: string,
+		options: TypesGen.UsersRequest,
+		signal?: AbortSignal,
+	): Promise<TypesGen.MinimalUser[]> => {
+		const url = getURLWithSearchParams(
+			`/api/v2/organizations/${organizationId}/members/me/workspaces/available-users`,
+			options,
+		);
+		const response = await this.axios.get<TypesGen.MinimalUser[]>(
+			url.toString(),
+			{ signal },
+		);
+		return response.data;
+	};
+
 	createOrganization = async (params: TypesGen.CreateOrganizationRequest) => {
 		const response = await this.axios.post<TypesGen.Organization>(
 			"/api/v2/organizations",
@@ -2367,42 +2389,21 @@ class ApiMethods {
 
 		const activeVersionId = template.active_version_id;
 
-		if (isDynamicParametersEnabled) {
-			try {
-				return await this.postWorkspaceBuild(workspace.id, {
-					transition: "start",
-					template_version_id: activeVersionId,
-					rich_parameter_values: newBuildParameters,
-				});
-			} catch (error) {
-				// If the build failed because of a parameter validation error, then we
-				// throw a special sentinel error that can be caught by the caller.
-				if (
-					isApiError(error) &&
-					error.response.status === 400 &&
-					error.response.data.validations &&
-					error.response.data.validations.length > 0
-				) {
-					throw new ParameterValidationError(
-						activeVersionId,
-						error.response.data.validations,
-					);
-				}
-				throw error;
+		if (!isDynamicParametersEnabled) {
+			// Dynamic templates rely on the backend to fully validate parameters.
+			// Legacy templates do not, so do an additional check for any missing params.
+			const templateParameters =
+				await this.getTemplateVersionRichParameters(activeVersionId);
+
+			const missingParameters = getMissingParameters(
+				oldBuildParameters,
+				newBuildParameters,
+				templateParameters,
+			);
+
+			if (missingParameters.length > 0) {
+				throw new MissingBuildParameters(missingParameters, activeVersionId);
 			}
-		}
-
-		const templateParameters =
-			await this.getTemplateVersionRichParameters(activeVersionId);
-
-		const missingParameters = getMissingParameters(
-			oldBuildParameters,
-			newBuildParameters,
-			templateParameters,
-		);
-
-		if (missingParameters.length > 0) {
-			throw new MissingBuildParameters(missingParameters, activeVersionId);
 		}
 
 		// Stop the workspace if it is already running.
@@ -2418,11 +2419,29 @@ class ApiMethods {
 			}
 		}
 
-		return this.postWorkspaceBuild(workspace.id, {
-			transition: "start",
-			template_version_id: activeVersionId,
-			rich_parameter_values: newBuildParameters,
-		});
+		try {
+			return await this.postWorkspaceBuild(workspace.id, {
+				transition: "start",
+				template_version_id: activeVersionId,
+				rich_parameter_values: newBuildParameters,
+			});
+		} catch (error) {
+			// If the build failed because of a parameter validation error, then we
+			// throw a special sentinel error that can be caught by the caller.
+			if (
+				isDynamicParametersEnabled &&
+				isApiError(error) &&
+				error.response.status === 400 &&
+				error.response.data.validations &&
+				error.response.data.validations.length > 0
+			) {
+				throw new ParameterValidationError(
+					activeVersionId,
+					error.response.data.validations,
+				);
+			}
+			throw error;
+		}
 	};
 
 	getWorkspaceResolveAutostart = async (
@@ -2785,6 +2804,46 @@ class ApiMethods {
 		await this.axios.patch(`/api/v2/tasks/${user}/${id}/input`, {
 			input,
 		} satisfies TypesGen.UpdateTaskInputRequest);
+	};
+
+	getTaskLogs = async (
+		user: string,
+		id: string,
+	): Promise<TypesGen.TaskLogsResponse> => {
+		const response = await this.axios.get<TypesGen.TaskLogsResponse>(
+			`/api/v2/tasks/${user}/${id}/logs`,
+		);
+		return response.data;
+	};
+
+	pauseTask = async (
+		user: string,
+		id: string,
+	): Promise<TypesGen.PauseTaskResponse> => {
+		const response = await this.axios.post<TypesGen.PauseTaskResponse>(
+			`/api/v2/tasks/${user}/${id}/pause`,
+		);
+		return response.data;
+	};
+
+	resumeTask = async (
+		user: string,
+		id: string,
+	): Promise<TypesGen.ResumeTaskResponse> => {
+		const response = await this.axios.post<TypesGen.ResumeTaskResponse>(
+			`/api/v2/tasks/${user}/${id}/resume`,
+		);
+		return response.data;
+	};
+
+	sendTaskInput = async (
+		user: string,
+		id: string,
+		input: string,
+	): Promise<void> => {
+		await this.axios.post(`/api/v2/tasks/${user}/${id}/send`, {
+			input,
+		} satisfies TypesGen.TaskSendRequest);
 	};
 
 	createTaskFeedback = async (
