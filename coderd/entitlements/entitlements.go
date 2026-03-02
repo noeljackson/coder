@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,6 +23,12 @@ type Set struct {
 	// entitlementsMu lock. It is permissible to acquire the entitlementsMu lock while holding the
 	// right2Update token.
 	right2Update chan struct{}
+
+	// alwaysEntitle is a set of features that should always be
+	// marked as entitled and enabled, regardless of license state.
+	// After each Update(), these features are force-enabled and
+	// any related error/warning strings are removed.
+	alwaysEntitle map[codersdk.FeatureName]bool
 }
 
 func New() *Set {
@@ -49,6 +56,21 @@ func New() *Set {
 	}
 	s.right2Update <- struct{}{} // one token, serialized updates
 	return s
+}
+
+// SetAlwaysEntitled configures features that should always be marked
+// as entitled and enabled after every Update() call. This removes
+// the corresponding license-gate errors/warnings for these features.
+func (l *Set) SetAlwaysEntitled(features ...codersdk.FeatureName) {
+	l.entitlementsMu.Lock()
+	defer l.entitlementsMu.Unlock()
+
+	if l.alwaysEntitle == nil {
+		l.alwaysEntitle = make(map[codersdk.FeatureName]bool)
+	}
+	for _, f := range features {
+		l.alwaysEntitle[f] = true
+	}
 }
 
 // ErrLicenseRequiresTelemetry is an error returned by a fetch passed to Update to indicate that the
@@ -82,7 +104,41 @@ func (l *Set) Update(ctx context.Context, fetch func(context.Context) (codersdk.
 	l.entitlementsMu.Lock()
 	defer l.entitlementsMu.Unlock()
 	l.entitlements = ents
+	l.applyAlwaysEntitledLocked()
 	return nil
+}
+
+// featureErrorSubstrings maps features to substrings that identify
+// their related error/warning messages in the entitlements response.
+var featureErrorSubstrings = map[codersdk.FeatureName]string{
+	codersdk.FeatureMultipleExternalAuth: "External Auth Providers",
+}
+
+// applyAlwaysEntitledLocked force-enables features in alwaysEntitle
+// and strips their related error/warning strings. Caller must hold
+// entitlementsMu for writing.
+func (l *Set) applyAlwaysEntitledLocked() {
+	for feature := range l.alwaysEntitle {
+		l.entitlements.Features[feature] = codersdk.Feature{
+			Entitlement: codersdk.EntitlementEntitled,
+			Enabled:     true,
+		}
+		if substr, ok := featureErrorSubstrings[feature]; ok {
+			l.entitlements.Errors = filterOut(l.entitlements.Errors, substr)
+			l.entitlements.Warnings = filterOut(l.entitlements.Warnings, substr)
+		}
+	}
+}
+
+// filterOut returns a new slice with entries containing substr removed.
+func filterOut(ss []string, substr string) []string {
+	out := make([]string, 0, len(ss))
+	for _, s := range ss {
+		if !strings.Contains(s, substr) {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 // AllowRefresh returns whether the entitlements are allowed to be refreshed.

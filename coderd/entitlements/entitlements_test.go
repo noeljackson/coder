@@ -122,3 +122,66 @@ func TestUpdate_LicenseRequiresTelemetry(t *testing.T) {
 	require.True(t, set.Enabled(codersdk.FeatureAppearance))
 	require.Equal(t, []string{entitlements.ErrLicenseRequiresTelemetry.Error()}, set.Errors())
 }
+
+func TestSetAlwaysEntitled(t *testing.T) {
+	t.Parallel()
+	ctx := testutil.Context(t, testutil.WaitShort)
+
+	set := entitlements.New()
+	set.SetAlwaysEntitled(codersdk.FeatureMultipleExternalAuth)
+
+	// Simulate an enterprise entitlements fetch that returns the
+	// feature as not entitled with an error about external auth.
+	err := set.Update(ctx, func(_ context.Context) (codersdk.Entitlements, error) {
+		return codersdk.Entitlements{
+			Features: map[codersdk.FeatureName]codersdk.Feature{
+				codersdk.FeatureMultipleExternalAuth: {
+					Entitlement: codersdk.EntitlementNotEntitled,
+					Enabled:     false,
+				},
+			},
+			Errors: []string{
+				"You have multiple External Auth Providers configured but this is an Enterprise feature. Reduce to one.",
+			},
+			Warnings: []string{
+				"some unrelated warning",
+			},
+		}, nil
+	})
+	require.NoError(t, err)
+
+	// The feature should be force-enabled.
+	require.True(t, set.Enabled(codersdk.FeatureMultipleExternalAuth))
+	f, ok := set.Feature(codersdk.FeatureMultipleExternalAuth)
+	require.True(t, ok)
+	require.Equal(t, codersdk.EntitlementEntitled, f.Entitlement)
+
+	// The external auth error should be stripped, but unrelated
+	// warnings should be preserved.
+	require.Empty(t, set.Errors())
+	require.Equal(t, []string{"some unrelated warning"}, set.Warnings())
+}
+
+func TestSetAlwaysEntitled_NoAlwaysEntitle(t *testing.T) {
+	t.Parallel()
+	ctx := testutil.Context(t, testutil.WaitShort)
+
+	// Without SetAlwaysEntitled, errors pass through unchanged.
+	set := entitlements.New()
+	err := set.Update(ctx, func(_ context.Context) (codersdk.Entitlements, error) {
+		return codersdk.Entitlements{
+			Features: map[codersdk.FeatureName]codersdk.Feature{
+				codersdk.FeatureMultipleExternalAuth: {
+					Entitlement: codersdk.EntitlementNotEntitled,
+					Enabled:     false,
+				},
+			},
+			Errors: []string{
+				"You have multiple External Auth Providers configured but this is an Enterprise feature. Reduce to one.",
+			},
+		}, nil
+	})
+	require.NoError(t, err)
+	require.False(t, set.Enabled(codersdk.FeatureMultipleExternalAuth))
+	require.Len(t, set.Errors(), 1)
+}

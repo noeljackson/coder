@@ -687,7 +687,7 @@ func (r *RootCmd) Server(newAPI func(context.Context, *coderd.Options) (*coderd.
 				AllowWorkspaceRenames:        vals.AllowWorkspaceRenames.Value(),
 				MaxWorkspacesPerUser:         vals.MaxWorkspacesPerUser.Value(),
 				MaxWorkspacesPerOrganization: vals.MaxWorkspacesPerOrganization.Value(),
-				Entitlements:                 entitlements.New(),
+				Entitlements:                 newEntitlements(),
 				NotificationsEnqueuer:        notifications.NewNoopEnqueuer(), // Changed further down if notifications enabled.
 			}
 			if httpServers.TLSConfig != nil {
@@ -2891,4 +2891,12 @@ func getAndMigratePostgresDB(ctx context.Context, logger slog.Logger, postgresUR
 	}
 
 	return sqlDB, dbURL, nil
+}
+
+// newEntitlements creates an entitlements set with features that
+// this fork always enables regardless of license state.
+func newEntitlements() *entitlements.Set {
+	s := entitlements.New()
+	s.SetAlwaysEntitled(codersdk.FeatureMultipleExternalAuth)
+	return s
 }
