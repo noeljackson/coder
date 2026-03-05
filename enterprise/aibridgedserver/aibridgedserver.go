@@ -48,6 +48,7 @@ var (
 
 const (
 	InterceptionLogMarker = "interception log"
+	MetadataUserAgentKey  = "request_user_agent"
 )
 
 var _ aibridged.DRPCServer = &Server{}
@@ -59,6 +60,7 @@ type store interface {
 	InsertAIBridgeUserPrompt(ctx context.Context, arg database.InsertAIBridgeUserPromptParams) (database.AIBridgeUserPrompt, error)
 	InsertAIBridgeToolUsage(ctx context.Context, arg database.InsertAIBridgeToolUsageParams) (database.AIBridgeToolUsage, error)
 	UpdateAIBridgeInterceptionEnded(ctx context.Context, intcID database.UpdateAIBridgeInterceptionEndedParams) (database.AIBridgeInterception, error)
+	GetAIBridgeInterceptionLineageByToolCallID(ctx context.Context, toolCallID string) (database.GetAIBridgeInterceptionLineageByToolCallIDRow, error)
 
 	// MCPConfigurator-related queries.
 	GetExternalAuthLinksByUserID(ctx context.Context, userID uuid.UUID) ([]database.ExternalAuthLink, error)
@@ -131,6 +133,16 @@ func (s *Server) RecordInterception(ctx context.Context, in *proto.RecordInterce
 
 	metadata := metadataToMap(in.GetMetadata())
 
+	if in.UserAgent != "" {
+		if _, ok := metadata[MetadataUserAgentKey]; ok {
+			s.logger.Warn(ctx, "interception metadata contains user agent key, will be overwritten")
+		}
+		metadata[MetadataUserAgentKey] = in.UserAgent
+	}
+
+	// Look up the interception lineage using the correlating tool call ID.
+	parentID, rootID := s.findInterceptionLineage(ctx, in.GetCorrelatingToolCallId())
+
 	if s.structuredLogging {
 		s.logger.Info(ctx, InterceptionLogMarker,
 			slog.F("record_type", "interception_start"),
@@ -139,8 +151,12 @@ func (s *Server) RecordInterception(ctx context.Context, in *proto.RecordInterce
 			slog.F("api_key_id", in.ApiKeyId),
 			slog.F("provider", in.Provider),
 			slog.F("model", in.Model),
+			slog.F("client", in.Client),
 			slog.F("started_at", in.StartedAt.AsTime()),
 			slog.F("metadata", metadata),
+			slog.F("correlating_tool_call_id", in.GetCorrelatingToolCallId()),
+			slog.F("thread_parent_id", parentID),
+			slog.F("thread_root_id", rootID),
 		)
 	}
 
@@ -150,13 +166,16 @@ func (s *Server) RecordInterception(ctx context.Context, in *proto.RecordInterce
 	}
 
 	_, err = s.store.InsertAIBridgeInterception(ctx, database.InsertAIBridgeInterceptionParams{
-		ID:          intcID,
-		APIKeyID:    sql.NullString{String: in.ApiKeyId, Valid: true},
-		InitiatorID: initID,
-		Provider:    in.Provider,
-		Model:       in.Model,
-		Metadata:    out,
-		StartedAt:   in.StartedAt.AsTime(),
+		ID:                         intcID,
+		APIKeyID:                   sql.NullString{String: in.ApiKeyId, Valid: true},
+		Client:                     sql.NullString{String: in.Client, Valid: in.Client != ""},
+		InitiatorID:                initID,
+		Provider:                   in.Provider,
+		Model:                      in.Model,
+		Metadata:                   out,
+		StartedAt:                  in.StartedAt.AsTime(),
+		ThreadParentInterceptionID: uuid.NullUUID{UUID: parentID, Valid: parentID != uuid.Nil},
+		ThreadRootInterceptionID:   uuid.NullUUID{UUID: rootID, Valid: rootID != uuid.Nil},
 	})
 	if err != nil {
 		return nil, xerrors.Errorf("start interception: %w", err)
@@ -295,6 +314,7 @@ func (s *Server) RecordToolUsage(ctx context.Context, in *proto.RecordToolUsageR
 			slog.F("record_type", "tool_usage"),
 			slog.F("interception_id", intcID.String()),
 			slog.F("msg_id", in.GetMsgId()),
+			slog.F("tool_call_id", in.GetToolCallId()),
 			slog.F("tool", in.GetTool()),
 			slog.F("input", in.GetInput()),
 			slog.F("server_url", in.GetServerUrl()),
@@ -314,6 +334,7 @@ func (s *Server) RecordToolUsage(ctx context.Context, in *proto.RecordToolUsageR
 		ID:                 uuid.New(),
 		InterceptionID:     intcID,
 		ProviderResponseID: in.GetMsgId(),
+		ProviderToolCallID: sql.NullString{String: in.GetToolCallId(), Valid: in.GetToolCallId() != ""},
 		ServerUrl:          sql.NullString{String: in.GetServerUrl(), Valid: in.ServerUrl != nil},
 		Tool:               in.GetTool(),
 		Input:              in.GetInput(),
@@ -327,6 +348,25 @@ func (s *Server) RecordToolUsage(ctx context.Context, in *proto.RecordToolUsageR
 	}
 
 	return &proto.RecordToolUsageResponse{}, nil
+}
+
+// findInterceptionLineage looks up the parent interception and the root
+// of the thread by finding which interception recorded a tool usage with
+// the given tool call ID. Returns (parentID, rootID); both will be
+// uuid.Nil if no match is found or the tool call ID is empty.
+func (s *Server) findInterceptionLineage(ctx context.Context, toolCallID string) (parent uuid.UUID, root uuid.UUID) {
+	if toolCallID == "" {
+		return uuid.Nil, uuid.Nil
+	}
+
+	lineage, err := s.store.GetAIBridgeInterceptionLineageByToolCallID(ctx, toolCallID)
+	if err != nil {
+		s.logger.Warn(ctx, "failed to retrieve interception lineage",
+			slog.Error(err), slog.F("tool_call_id", toolCallID))
+		return uuid.Nil, uuid.Nil
+	}
+
+	return lineage.ThreadParentID, lineage.ThreadRootID
 }
 
 func (s *Server) GetMCPServerConfigs(_ context.Context, _ *proto.GetMCPServerConfigsRequest) (*proto.GetMCPServerConfigsResponse, error) {
