@@ -30,16 +30,15 @@ type RoleParams struct {
 }
 
 func (AGPLIDPSync) RoleSyncEntitled() bool {
-	// AGPL does not support syncing groups.
-	return false
+	return true
 }
 
 func (AGPLIDPSync) OrganizationRoleSyncEnabled(_ context.Context, _ database.Store, _ uuid.UUID) (bool, error) {
 	return false, nil
 }
 
-func (AGPLIDPSync) SiteRoleSyncEnabled() bool {
-	return false
+func (s AGPLIDPSync) SiteRoleSyncEnabled() bool {
+	return s.SiteRoleField != ""
 }
 
 func (s AGPLIDPSync) UpdateRoleSyncSettings(ctx context.Context, orgID uuid.UUID, db database.Store, settings RoleSyncSettings) error {
@@ -64,10 +63,37 @@ func (s AGPLIDPSync) RoleSyncSettings(ctx context.Context, orgID uuid.UUID, db d
 	return settings, nil
 }
 
-func (s AGPLIDPSync) ParseRoleClaims(_ context.Context, _ jwt.MapClaims) (RoleParams, *HTTPError) {
+func (s AGPLIDPSync) ParseRoleClaims(ctx context.Context, mergedClaims jwt.MapClaims) (RoleParams, *HTTPError) {
+	var claimRoles []string
+	if s.SiteRoleField != "" {
+		var err error
+		claimRoles, err = s.RolesFromClaim(s.SiteRoleField, mergedClaims)
+		if err != nil {
+			s.Logger.Error(ctx, "oidc claims user roles field was an unknown type",
+				slog.F("field", s.SiteRoleField),
+				slog.Error(err),
+			)
+			return RoleParams{}, nil
+		}
+	}
+
+	siteRoles := append([]string{}, s.SiteDefaultRoles...)
+	for _, role := range claimRoles {
+		if mappedRoles, ok := s.SiteRoleMapping[role]; ok {
+			if len(mappedRoles) == 0 {
+				continue
+			}
+			siteRoles = append(siteRoles, mappedRoles...)
+			continue
+		}
+		siteRoles = append(siteRoles, role)
+	}
+
 	return RoleParams{
-		SyncEntitled: s.RoleSyncEntitled(),
-		SyncSiteWide: s.SiteRoleSyncEnabled(),
+		SyncEntitled:  s.RoleSyncEntitled(),
+		SyncSiteWide:  s.SiteRoleSyncEnabled(),
+		SiteWideRoles: slice.Unique(siteRoles),
+		MergedClaims:  mergedClaims,
 	}, nil
 }
 
