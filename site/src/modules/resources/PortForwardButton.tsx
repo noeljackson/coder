@@ -21,6 +21,7 @@ import {
 	type WorkspaceAgentPortShareProtocol,
 	WorkspaceAppSharingLevels,
 } from "api/typesGenerated";
+import { ChevronDownIcon } from "components/AnimatedIcons/ChevronDown";
 import { Button } from "components/Button/Button";
 import {
 	HelpTooltipLink,
@@ -41,7 +42,6 @@ import {
 import { useFormik } from "formik";
 import {
 	BuildingIcon,
-	ChevronDownIcon,
 	ExternalLinkIcon,
 	LockIcon,
 	LockOpenIcon,
@@ -527,6 +527,7 @@ export const PortForwardPopoverView: FC<PortForwardPopoverViewProps> = ({
 										<Button
 											size="icon"
 											variant="subtle"
+											aria-label="Delete shared port"
 											onClick={async () => {
 												await deleteSharedPortMutation.mutateAsync({
 													agent_name: agent.name,
