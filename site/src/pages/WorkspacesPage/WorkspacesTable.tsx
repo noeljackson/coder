@@ -1,6 +1,6 @@
 import Skeleton from "@mui/material/Skeleton";
+import { API } from "api/api";
 import { templateVersion } from "api/queries/templates";
-import { apiKey } from "api/queries/users";
 import {
 	cancelBuild,
 	deleteWorkspace,
@@ -92,7 +92,6 @@ interface WorkspacesTableProps {
 	error?: unknown;
 	isUsingFilter: boolean;
 	onCheckChange: (checkedWorkspaces: readonly Workspace[]) => void;
-	canCheckWorkspaces: boolean;
 	templates?: Template[];
 	canCreateTemplate: boolean;
 	onActionSuccess: () => Promise<void>;
@@ -104,7 +103,6 @@ export const WorkspacesTable: FC<WorkspacesTableProps> = ({
 	checkedWorkspaces,
 	isUsingFilter,
 	onCheckChange,
-	canCheckWorkspaces,
 	templates,
 	canCreateTemplate,
 	onActionSuccess,
@@ -118,28 +116,27 @@ export const WorkspacesTable: FC<WorkspacesTableProps> = ({
 				<TableRow>
 					<TableHead className="w-1/3">
 						<div className="flex items-center gap-5">
-							{canCheckWorkspaces && (
-								<Checkbox
-									disabled={!workspaces || workspaces.length === 0}
-									checked={
-										workspaces &&
-										workspaces.length > 0 &&
-										checkedWorkspaces.length === workspaces.length
+							<Checkbox
+								disabled={!workspaces || workspaces.length === 0}
+								checked={
+									workspaces &&
+									workspaces.length > 0 &&
+									checkedWorkspaces.length === workspaces.length
+								}
+								onCheckedChange={(checked) => {
+									if (!workspaces) {
+										return;
 									}
-									onCheckedChange={(checked) => {
-										if (!workspaces) {
-											return;
-										}
 
-										if (!checked) {
-											onCheckChange([]);
-										} else {
-											onCheckChange(workspaces);
-										}
-									}}
-									aria-label="Select all workspaces"
-								/>
-							)}
+									if (!checked) {
+										onCheckChange([]);
+									} else {
+										onCheckChange(workspaces);
+									}
+								}}
+								aria-label="Select all workspaces"
+								className="my-0"
+							/>
 							Name
 						</div>
 					</TableHead>
@@ -151,7 +148,7 @@ export const WorkspacesTable: FC<WorkspacesTableProps> = ({
 				</TableRow>
 			</TableHeader>
 			<TableBody className="[&_td]:h-[72px]">
-				{!workspaces && <TableLoader canCheckWorkspaces={canCheckWorkspaces} />}
+				{!workspaces && <TableLoader />}
 				{workspaces && workspaces.length === 0 && (
 					<TableRow>
 						<TableCell colSpan={999}>
@@ -177,28 +174,26 @@ export const WorkspacesTable: FC<WorkspacesTableProps> = ({
 						>
 							<TableCell>
 								<div className="flex items-center gap-5">
-									{canCheckWorkspaces && (
-										<Checkbox
-											data-testid={`checkbox-${workspace.id}`}
-											disabled={cantBeChecked(workspace)}
-											checked={checked}
-											onClick={(e) => {
-												e.stopPropagation();
-											}}
-											onCheckedChange={(checked) => {
-												if (checked) {
-													onCheckChange([...checkedWorkspaces, workspace]);
-												} else {
-													onCheckChange(
-														checkedWorkspaces.filter(
-															(w) => w.id !== workspace.id,
-														),
-													);
-												}
-											}}
-											aria-label={`Select workspace ${workspace.name}`}
-										/>
-									)}
+									<Checkbox
+										data-testid={`checkbox-${workspace.id}`}
+										disabled={cantBeChecked(workspace)}
+										checked={checked}
+										onClick={(e) => {
+											e.stopPropagation();
+										}}
+										onCheckedChange={(checked) => {
+											if (checked) {
+												onCheckChange([...checkedWorkspaces, workspace]);
+											} else {
+												onCheckChange(
+													checkedWorkspaces.filter(
+														(w) => w.id !== workspace.id,
+													),
+												);
+											}
+										}}
+										aria-label={`Select workspace ${workspace.name}`}
+									/>
 									<AvatarData
 										title={
 											<Stack direction="row" spacing={0.5} alignItems="center">
@@ -333,17 +328,13 @@ const WorkspacesRow: FC<WorkspacesRowProps> = ({
 	);
 };
 
-interface TableLoaderProps {
-	canCheckWorkspaces?: boolean;
-}
-
-const TableLoader: FC<TableLoaderProps> = ({ canCheckWorkspaces }) => {
+const TableLoader: FC = () => {
 	return (
 		<TableLoaderSkeleton>
 			<TableRowSkeleton>
 				<TableCell className="w-2/6">
 					<div className="flex items-center gap-5">
-						{canCheckWorkspaces && <Checkbox disabled />}
+						<Checkbox disabled />
 						<AvatarDataSkeleton />
 					</div>
 				</TableCell>
@@ -638,9 +629,6 @@ type WorkspaceAppsProps = {
 };
 
 const WorkspaceApps: FC<WorkspaceAppsProps> = ({ workspace }) => {
-	const { data: apiKeyResponse } = useQuery(apiKey());
-	const token = apiKeyResponse?.key;
-
 	/**
 	 * Coder is pretty flexible and allows an enormous variety of use cases, such
 	 * as having multiple resources with many agents, but they are not common. The
@@ -674,39 +662,33 @@ const WorkspaceApps: FC<WorkspaceAppsProps> = ({ workspace }) => {
 
 	if (builtinApps.has("vscode")) {
 		buttons.push(
-			<BaseIconLink
+			<VSCodeIconLink
 				key="vscode"
-				isLoading={!token}
+				variant="vscode"
 				label="Open VSCode"
-				href={getVSCodeHref("vscode", {
-					owner: workspace.owner_name,
-					workspace: workspace.name,
-					agent: agent.name,
-					token: token ?? "",
-					folder: agent.expanded_directory,
-				})}
+				owner={workspace.owner_name}
+				workspace={workspace.name}
+				agent={agent.name}
+				folder={agent.expanded_directory}
 			>
 				<VSCodeIcon />
-			</BaseIconLink>,
+			</VSCodeIconLink>,
 		);
 	}
 
 	if (builtinApps.has("vscode_insiders")) {
 		buttons.push(
-			<BaseIconLink
+			<VSCodeIconLink
 				key="vscode-insiders"
+				variant="vscode-insiders"
 				label="Open VSCode Insiders"
-				isLoading={!token}
-				href={getVSCodeHref("vscode-insiders", {
-					owner: workspace.owner_name,
-					workspace: workspace.name,
-					agent: agent.name,
-					token: token ?? "",
-					folder: agent.expanded_directory,
-				})}
+				owner={workspace.owner_name}
+				workspace={workspace.name}
+				agent={agent.name}
+				folder={agent.expanded_directory}
 			>
 				<VSCodeInsidersIcon />
-			</BaseIconLink>,
+			</VSCodeIconLink>,
 		);
 	}
 
@@ -803,40 +785,122 @@ const IconAppLink: FC<IconAppLinkProps> = ({ app, workspace, agent }) => {
 	);
 };
 
-type BaseIconLinkProps = PropsWithChildren<{
+type VSCodeIconLinkProps = PropsWithChildren<{
+	variant: "vscode" | "vscode-insiders";
 	label: string;
-	href: string;
-	isLoading?: boolean;
-	onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
-	target?: string;
+	owner: string;
+	workspace: string;
+	agent: string;
+	folder?: string;
 }>;
 
+// Generates an API key on click instead of on page load, since
+// key generation is a POST request that should only fire when
+// the user actually wants to open VS Code.
+const VSCodeIconLink: FC<VSCodeIconLinkProps> = ({
+	variant,
+	label,
+	owner,
+	workspace,
+	agent,
+	folder,
+	children,
+}) => {
+	const generateKeyMutation = useMutation({
+		mutationFn: () => API.getApiKey(),
+		onSuccess: ({ key }) => {
+			// We use a `location.href` here instead of a `navigate` because
+			// these are protocol-specific links.
+			location.href = getVSCodeHref(variant, {
+				owner,
+				workspace,
+				token: key,
+				agent,
+				folder,
+			});
+		},
+	});
+
+	return (
+		<BaseIconLink
+			label={label}
+			isLoading={generateKeyMutation.isPending}
+			onClick={() => {
+				if (!generateKeyMutation.isPending) {
+					generateKeyMutation.mutate();
+				}
+			}}
+		>
+			{children}
+		</BaseIconLink>
+	);
+};
+
+type BaseIconLinkCommonProps = PropsWithChildren<{
+	label: string;
+	isLoading?: boolean;
+}>;
+
+type BaseIconLinkAnchorProps = BaseIconLinkCommonProps & {
+	href: string;
+	onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+	target?: string;
+};
+
+type BaseIconLinkButtonProps = BaseIconLinkCommonProps & {
+	href?: never;
+	onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+};
+
+type BaseIconLinkProps = BaseIconLinkAnchorProps | BaseIconLinkButtonProps;
+
 const BaseIconLink: FC<BaseIconLinkProps> = ({
-	href,
 	isLoading,
 	label,
 	children,
-	target,
-	onClick,
+	...rest
 }) => {
+	const loadingClass = isLoading ? "animate-pulse" : "";
+
 	return (
 		<TooltipProvider>
 			<Tooltip>
 				<TooltipTrigger asChild>
-					<Button variant="outline" size="icon-lg" asChild>
-						<a
-							target={target}
-							className={isLoading ? "animate-pulse" : ""}
-							href={href}
+					{rest.href !== undefined ? (
+						<Button
+							variant="outline"
+							size="icon-lg"
+							asChild
+							disabled={isLoading}
+						>
+							<a
+								target={rest.target}
+								className={loadingClass}
+								href={rest.href}
+								onClick={(e) => {
+									e.stopPropagation();
+									rest.onClick?.(e);
+								}}
+							>
+								{children}
+								<span className="sr-only">{label}</span>
+							</a>
+						</Button>
+					) : (
+						<Button
+							variant="outline"
+							size="icon-lg"
+							className={loadingClass}
 							onClick={(e) => {
 								e.stopPropagation();
-								onClick?.(e);
+								rest.onClick(e);
 							}}
+							disabled={isLoading}
 						>
 							{children}
 							<span className="sr-only">{label}</span>
-						</a>
-					</Button>
+						</Button>
+					)}
 				</TooltipTrigger>
 				<TooltipContent>{label}</TooltipContent>
 			</Tooltip>
