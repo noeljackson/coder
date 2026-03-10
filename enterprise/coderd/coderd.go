@@ -3,6 +3,7 @@ package coderd
 import (
 	"context"
 	"crypto/ed25519"
+	"crypto/tls"
 	"fmt"
 	"math"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/xerrors"
 	"tailscale.com/tailcfg"
@@ -43,6 +45,7 @@ import (
 	agplusage "github.com/coder/coder/v2/coderd/usage"
 	"github.com/coder/coder/v2/coderd/wsbuilder"
 	"github.com/coder/coder/v2/codersdk"
+	entchatd "github.com/coder/coder/v2/enterprise/coderd/chatd"
 	"github.com/coder/coder/v2/enterprise/coderd/connectionlog"
 	"github.com/coder/coder/v2/enterprise/coderd/dbauthz"
 	"github.com/coder/coder/v2/enterprise/coderd/enidpsync"
@@ -100,6 +103,11 @@ func New(ctx context.Context, options *Options) (_ *API, err error) {
 	}
 
 	ctx, cancelFunc := context.WithCancel(ctx)
+	defer func() {
+		if err != nil {
+			cancelFunc()
+		}
+	}()
 
 	if options.ExternalTokenEncryption == nil {
 		options.ExternalTokenEncryption = make([]dbcrypt.Cipher, 0)
@@ -141,6 +149,33 @@ func New(ctx context.Context, options *Options) (_ *API, err error) {
 		)
 	}
 
+	meshTLSConfig, err := replicasync.CreateDERPMeshTLSConfig(options.AccessURL.Hostname(), options.TLSCertificates)
+	if err != nil {
+		return nil, xerrors.Errorf("create DERP mesh TLS config: %w", err)
+	}
+
+	var replicaManagerPtr atomic.Pointer[replicasync.Manager]
+	resolveReplicaAddress := func(
+		_ context.Context,
+		replicaID uuid.UUID,
+	) (string, bool) {
+		manager := replicaManagerPtr.Load()
+		if manager == nil {
+			return "", false
+		}
+		for _, replica := range manager.AllPrimary() {
+			if replica.ID != replicaID {
+				continue
+			}
+			relayAddress := strings.TrimSpace(replica.RelayAddress)
+			if relayAddress == "" {
+				return "", false
+			}
+			return relayAddress, true
+		}
+		return "", false
+	}
+
 	api := &API{
 		ctx:     ctx,
 		cancel:  cancelFunc,
@@ -156,6 +191,32 @@ func New(ctx context.Context, options *Options) (_ *API, err error) {
 	}
 	// This must happen before coderd initialization!
 	options.PostAuthAdditionalHeadersFunc = api.writeEntitlementWarningsHeader
+
+	// Wire up enterprise chat subscription with cross-replica relay
+	// and pubsub coordination. Must be set before coderd.New so the
+	// chat processor receives it.
+	replicaHTTPClient := replicaRelayHTTPClient(options.HTTPClient, meshTLSConfig)
+	if replicaHTTPClient == nil {
+		replicaHTTPClient = options.Options.HTTPClient
+	}
+	if replicaHTTPClient == nil {
+		replicaHTTPClient = http.DefaultClient
+	}
+	// Use a closure that captures api by reference so it can access
+	// api.AGPL.ID after coderd.New is called. The SubscribeFn is
+	// only invoked from Subscribe, which happens after init.
+	options.Options.ChatSubscribeFn = entchatd.NewMultiReplicaSubscribeFn(entchatd.MultiReplicaSubscribeConfig{
+		ResolveReplicaAddress: resolveReplicaAddress,
+		ReplicaHTTPClient:     replicaHTTPClient,
+		ReplicaIDFn: func() uuid.UUID {
+			id := api.AGPL.ID
+			if id == uuid.Nil {
+				return uuid.New()
+			}
+			return id
+		},
+	})
+
 	api.AGPL = coderd.New(options.Options)
 	defer func() {
 		if err != nil {
@@ -364,9 +425,6 @@ func New(ctx context.Context, options *Options) (_ *API, err error) {
 				r.Get("/idpsync/field-values", api.organizationIDPSyncClaimFieldValues)
 
 				r.Route("/workspace-sharing", func(r chi.Router) {
-					r.Use(
-						httpmw.RequireExperiment(api.AGPL.Experiments, codersdk.ExperimentWorkspaceSharing),
-					)
 					r.Get("/", api.workspaceSharingSettings)
 					r.Patch("/", api.patchWorkspaceSharingSettings)
 				})
@@ -586,10 +644,6 @@ func New(ctx context.Context, options *Options) (_ *API, err error) {
 		})))
 	}
 
-	meshTLSConfig, err := replicasync.CreateDERPMeshTLSConfig(options.AccessURL.Hostname(), options.TLSCertificates)
-	if err != nil {
-		return nil, xerrors.Errorf("create DERP mesh TLS config: %w", err)
-	}
 	// We always want to run the replica manager even if we don't have DERP
 	// enabled, since it's used to detect other coder servers for licensing.
 	api.replicaManager, err = replicasync.New(ctx, options.Logger, options.Database, options.Pubsub, &replicasync.Options{
@@ -603,6 +657,7 @@ func New(ctx context.Context, options *Options) (_ *API, err error) {
 	if err != nil {
 		return nil, xerrors.Errorf("initialize replica: %w", err)
 	}
+	replicaManagerPtr.Store(api.replicaManager)
 	if api.DERPServer != nil {
 		api.derpMesh = derpmesh.New(options.Logger.Named("derpmesh"), api.DERPServer, meshTLSConfig)
 	}
@@ -652,6 +707,28 @@ func New(ctx context.Context, options *Options) (_ *API, err error) {
 	go api.BoundaryUsageTracker.StartFlushLoop(ctx, options.Logger.Named("boundary_usage_tracker"), options.Database, api.AGPL.ID)
 
 	return api, nil
+}
+
+func replicaRelayHTTPClient(base *http.Client, tlsConfig *tls.Config) *http.Client {
+	if base == nil {
+		base = http.DefaultClient
+	}
+
+	clone := *base
+	var transport *http.Transport
+	switch t := base.Transport.(type) {
+	case *http.Transport:
+		transport = t.Clone()
+	default:
+		if defaultTransport, ok := http.DefaultTransport.(*http.Transport); ok {
+			transport = defaultTransport.Clone()
+		} else {
+			transport = &http.Transport{}
+		}
+	}
+	transport.TLSClientConfig = tlsConfig
+	clone.Transport = transport
+	return &clone
 }
 
 type Options struct {
@@ -983,7 +1060,13 @@ func (api *API) updateEntitlements(ctx context.Context) error {
 
 var _ wsbuilder.UsageChecker = &API{}
 
-func (api *API) CheckBuildUsage(ctx context.Context, store database.Store, templateVersion *database.TemplateVersion, task *database.Task, transition database.WorkspaceTransition) (wsbuilder.UsageCheckResponse, error) {
+func (api *API) CheckBuildUsage(
+	_ context.Context,
+	_ database.Store,
+	templateVersion *database.TemplateVersion,
+	task *database.Task,
+	transition database.WorkspaceTransition,
+) (wsbuilder.UsageCheckResponse, error) {
 	// If the template version has an external agent, we need to check that the
 	// license is entitled to this feature.
 	if templateVersion.HasExternalAgent.Valid && templateVersion.HasExternalAgent.Bool {
@@ -996,59 +1079,23 @@ func (api *API) CheckBuildUsage(ctx context.Context, store database.Store, templ
 		}
 	}
 
-	resp, err := api.checkAIBuildUsage(ctx, store, task, transition)
-	if err != nil {
-		return wsbuilder.UsageCheckResponse{}, err
-	}
-	if !resp.Permitted {
-		return resp, nil
-	}
-
-	return wsbuilder.UsageCheckResponse{Permitted: true}, nil
-}
-
-// checkAIBuildUsage validates AI-related usage constraints. It is a no-op
-// unless the transition is "start" and the template version has an AI task.
-func (api *API) checkAIBuildUsage(ctx context.Context, store database.Store, task *database.Task, transition database.WorkspaceTransition) (wsbuilder.UsageCheckResponse, error) {
-	// Only check AI usage rules for start transitions.
-	if transition != database.WorkspaceTransitionStart {
+	// Verify managed agent entitlement for AI task builds.
+	// The count/limit check is intentionally omitted — breaching the
+	// limit is advisory only and surfaced as a warning via entitlements.
+	if transition != database.WorkspaceTransitionStart || task == nil {
 		return wsbuilder.UsageCheckResponse{Permitted: true}, nil
 	}
 
-	// If the template version doesn't have an AI task, we don't need to check usage.
-	if task == nil {
+	if !api.Entitlements.HasLicense() {
 		return wsbuilder.UsageCheckResponse{Permitted: true}, nil
 	}
 
-	// When licensed, ensure we haven't breached the managed agent limit.
-	// Unlicensed deployments are allowed to use unlimited managed agents.
-	if api.Entitlements.HasLicense() {
-		managedAgentLimit, ok := api.Entitlements.Feature(codersdk.FeatureManagedAgentLimit)
-		if !ok || !managedAgentLimit.Enabled || managedAgentLimit.Limit == nil || managedAgentLimit.UsagePeriod == nil {
-			return wsbuilder.UsageCheckResponse{
-				Permitted: false,
-				Message:   "Your license is not entitled to managed agents. Please contact sales to continue using managed agents.",
-			}, nil
-		}
-
-		// This check is intentionally not committed to the database. It's fine
-		// if it's not 100% accurate or allows for minor breaches due to build
-		// races.
-		// nolint:gocritic // Requires permission to read all usage events.
-		managedAgentCount, err := store.GetTotalUsageDCManagedAgentsV1(agpldbauthz.AsSystemRestricted(ctx), database.GetTotalUsageDCManagedAgentsV1Params{
-			StartDate: managedAgentLimit.UsagePeriod.Start,
-			EndDate:   managedAgentLimit.UsagePeriod.End,
-		})
-		if err != nil {
-			return wsbuilder.UsageCheckResponse{}, xerrors.Errorf("get managed agent count: %w", err)
-		}
-
-		if managedAgentCount >= *managedAgentLimit.Limit {
-			return wsbuilder.UsageCheckResponse{
-				Permitted: false,
-				Message:   "You have breached the managed agent limit in your license. Please contact sales to continue using managed agents.",
-			}, nil
-		}
+	managedAgentLimit, ok := api.Entitlements.Feature(codersdk.FeatureManagedAgentLimit)
+	if !ok || !managedAgentLimit.Enabled {
+		return wsbuilder.UsageCheckResponse{
+			Permitted: false,
+			Message:   "Your license is not entitled to managed agents. Please contact sales to continue using managed agents.",
+		}, nil
 	}
 
 	return wsbuilder.UsageCheckResponse{Permitted: true}, nil
