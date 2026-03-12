@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/base64"
+	"strings"
 
 	"github.com/google/uuid"
 	"golang.org/x/xerrors"
@@ -262,6 +263,39 @@ func (db *dbCrypt) UpdateExternalAuthLink(ctx context.Context, params database.U
 }
 
 func (db *dbCrypt) UpdateExternalAuthLinkRefreshToken(ctx context.Context, params database.UpdateExternalAuthLinkRefreshTokenParams) error {
+	// The SQL query uses an optimistic lock:
+	//   WHERE oauth_refresh_token = @old_oauth_refresh_token
+	// The caller supplies the plaintext old token (since dbcrypt
+	// decrypts on read), but the DB stores the encrypted value.
+	// Because AES-GCM is non-deterministic, we cannot simply
+	// re-encrypt the old token — the ciphertext would differ.
+	// Instead, read the current row from the inner (raw) store
+	// and use the actual encrypted value for the WHERE clause.
+	if params.OldOauthRefreshToken != "" && db.ciphers != nil && db.primaryCipherDigest != "" {
+		raw, err := db.Store.GetExternalAuthLink(ctx, database.GetExternalAuthLinkParams{
+			ProviderID: params.ProviderID,
+			UserID:     params.UserID,
+		})
+		if err != nil {
+			return err
+		}
+		// Decrypt the stored token so we can compare with the
+		// caller-supplied plaintext.
+		decrypted := raw.OAuthRefreshToken
+		if err := db.decryptField(&decrypted, raw.OAuthRefreshTokenKeyID); err != nil {
+			return err
+		}
+		if decrypted != params.OldOauthRefreshToken {
+			// The token has changed since the caller read it;
+			// the optimistic lock should fail (no rows updated).
+			// Return nil to match the :exec semantics of the SQL
+			// query, which silently updates zero rows.
+			return nil
+		}
+		// Use the raw encrypted value so the WHERE clause matches.
+		params.OldOauthRefreshToken = raw.OAuthRefreshToken
+	}
+
 	// We would normally use a sql.NullString here, but sqlc does not want to make
 	// a params struct with a nullable string.
 	var digest sql.NullString
@@ -349,6 +383,92 @@ func (db *dbCrypt) GetCryptoKeysByFeature(ctx context.Context, feature database.
 	}
 
 	return keys, nil
+}
+
+func (db *dbCrypt) GetChatProviderByID(ctx context.Context, id uuid.UUID) (database.ChatProvider, error) {
+	provider, err := db.Store.GetChatProviderByID(ctx, id)
+	if err != nil {
+		return database.ChatProvider{}, err
+	}
+	if err := db.decryptField(&provider.APIKey, provider.ApiKeyKeyID); err != nil {
+		return database.ChatProvider{}, err
+	}
+	return provider, nil
+}
+
+func (db *dbCrypt) GetChatProviderByProvider(ctx context.Context, providerName string) (database.ChatProvider, error) {
+	provider, err := db.Store.GetChatProviderByProvider(ctx, providerName)
+	if err != nil {
+		return database.ChatProvider{}, err
+	}
+	if err := db.decryptField(&provider.APIKey, provider.ApiKeyKeyID); err != nil {
+		return database.ChatProvider{}, err
+	}
+	return provider, nil
+}
+
+func (db *dbCrypt) GetChatProviders(ctx context.Context) ([]database.ChatProvider, error) {
+	providers, err := db.Store.GetChatProviders(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range providers {
+		if err := db.decryptField(&providers[i].APIKey, providers[i].ApiKeyKeyID); err != nil {
+			return nil, err
+		}
+	}
+
+	return providers, nil
+}
+
+func (db *dbCrypt) GetEnabledChatProviders(ctx context.Context) ([]database.ChatProvider, error) {
+	providers, err := db.Store.GetEnabledChatProviders(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range providers {
+		if err := db.decryptField(&providers[i].APIKey, providers[i].ApiKeyKeyID); err != nil {
+			return nil, err
+		}
+	}
+
+	return providers, nil
+}
+
+func (db *dbCrypt) InsertChatProvider(ctx context.Context, params database.InsertChatProviderParams) (database.ChatProvider, error) {
+	if strings.TrimSpace(params.APIKey) == "" {
+		params.ApiKeyKeyID = sql.NullString{}
+	} else if err := db.encryptField(&params.APIKey, &params.ApiKeyKeyID); err != nil {
+		return database.ChatProvider{}, err
+	}
+
+	provider, err := db.Store.InsertChatProvider(ctx, params)
+	if err != nil {
+		return database.ChatProvider{}, err
+	}
+	if err := db.decryptField(&provider.APIKey, provider.ApiKeyKeyID); err != nil {
+		return database.ChatProvider{}, err
+	}
+	return provider, nil
+}
+
+func (db *dbCrypt) UpdateChatProvider(ctx context.Context, params database.UpdateChatProviderParams) (database.ChatProvider, error) {
+	if strings.TrimSpace(params.APIKey) == "" {
+		params.ApiKeyKeyID = sql.NullString{}
+	} else if err := db.encryptField(&params.APIKey, &params.ApiKeyKeyID); err != nil {
+		return database.ChatProvider{}, err
+	}
+
+	provider, err := db.Store.UpdateChatProvider(ctx, params)
+	if err != nil {
+		return database.ChatProvider{}, err
+	}
+	if err := db.decryptField(&provider.APIKey, provider.ApiKeyKeyID); err != nil {
+		return database.ChatProvider{}, err
+	}
+	return provider, nil
 }
 
 func (db *dbCrypt) encryptField(field *string, digest *sql.NullString) error {

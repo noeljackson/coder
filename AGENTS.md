@@ -37,19 +37,19 @@ Only pause to ask for confirmation when:
 
 ## Essential Commands
 
-| Task              | Command                  | Notes                            |
-|-------------------|--------------------------|----------------------------------|
-| **Development**   | `./scripts/develop.sh`   | ⚠️ Don't use manual build        |
-| **Build**         | `make build`             | Fat binaries (includes server)   |
-| **Build Slim**    | `make build-slim`        | Slim binaries                    |
-| **Test**          | `make test`              | Full test suite                  |
-| **Test Single**   | `make test RUN=TestName` | Faster than full suite           |
-| **Test Postgres** | `make test-postgres`     | Run tests with Postgres database |
-| **Test Race**     | `make test-race`         | Run tests with Go race detector  |
-| **Lint**          | `make lint`              | Always run after changes         |
-| **Generate**      | `make gen`               | After database changes           |
-| **Format**        | `make fmt`               | Auto-format code                 |
-| **Clean**         | `make clean`             | Clean build artifacts            |
+| Task            | Command                  | Notes                               |
+|-----------------|--------------------------|-------------------------------------|
+| **Development** | `./scripts/develop.sh`   | ⚠️ Don't use manual build           |
+| **Build**       | `make build`             | Fat binaries (includes server)      |
+| **Build Slim**  | `make build-slim`        | Slim binaries                       |
+| **Test**        | `make test`              | Full test suite                     |
+| **Test Single** | `make test RUN=TestName` | Faster than full suite              |
+| **Test Race**   | `make test-race`         | Run tests with Go race detector     |
+| **Lint**        | `make lint`              | Always run after changes            |
+| **Generate**    | `make gen`               | After database changes              |
+| **Format**      | `make fmt`               | Auto-format code                    |
+| **Clean**       | `make clean`             | Clean build artifacts               |
+| **Pre-commit**  | `make pre-commit`        | Fast CI checks (gen/fmt/lint/build) |
 
 ### Documentation Commands
 
@@ -102,6 +102,34 @@ app, err := api.Database.GetOAuth2ProviderAppByClientID(ctx, clientID)
 ## Quick Reference
 
 ### Full workflows available in imported WORKFLOWS.md
+
+### Git Hooks (MANDATORY - DO NOT SKIP)
+
+**You MUST install and use the git hooks. NEVER bypass them with
+`--no-verify`. Skipping hooks wastes CI cycles and is unacceptable.**
+
+The first run will be slow as caches warm up. Consecutive runs are
+**significantly faster** (often 10x) thanks to Go build cache,
+generated file timestamps, and warm node_modules. This is NOT a
+reason to skip them. Wait for hooks to complete before proceeding,
+no matter how long they take.
+
+```sh
+git config core.hooksPath scripts/githooks
+```
+
+One hook runs automatically:
+
+- **pre-commit**: `make pre-commit` (gen, fmt, lint, typos, build).
+  Fast checks that catch most CI failures. Allow at least 5 minutes.
+
+`git commit` will appear to hang while the hook runs. This is normal.
+Do not interrupt, retry, or reduce the timeout.
+
+NEVER run `git config core.hooksPath` to change or disable hooks.
+
+If a hook fails, fix the issue and retry. Do not work around the
+failure by skipping the hook.
 
 ### Git Workflow
 
@@ -226,13 +254,12 @@ reviewer time and clutters the diff.
 **Don't delete existing comments** that explain non-obvious behavior. These
 comments preserve important context about why code works a certain way.
 
-**When adding tests for new behavior**, add new test cases instead of modifying
-existing ones. This preserves coverage for the original behavior and makes it
-clear what the new test covers.
+**When adding tests for new behavior**, read existing tests first to understand what's covered. Add new cases for uncovered behavior. Edit existing tests as needed, but don't change what they verify.
 
 ## Detailed Development Guides
 
 @.claude/docs/ARCHITECTURE.md
+@.claude/docs/GO.md
 @.claude/docs/OAUTH2.md
 @.claude/docs/TESTING.md
 @.claude/docs/TROUBLESHOOTING.md
