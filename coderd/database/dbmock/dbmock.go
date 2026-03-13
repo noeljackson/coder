@@ -44,6 +44,21 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// AcquireChats mocks base method.
+func (m *MockStore) AcquireChats(ctx context.Context, arg database.AcquireChatsParams) ([]database.Chat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AcquireChats", ctx, arg)
+	ret0, _ := ret[0].([]database.Chat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AcquireChats indicates an expected call of AcquireChats.
+func (mr *MockStoreMockRecorder) AcquireChats(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcquireChats", reflect.TypeOf((*MockStore)(nil).AcquireChats), ctx, arg)
+}
+
 // AcquireLock mocks base method.
 func (m *MockStore) AcquireLock(ctx context.Context, pgAdvisoryXactLock int64) error {
 	m.ctrl.T.Helper()
@@ -88,6 +103,21 @@ func (mr *MockStoreMockRecorder) AcquireProvisionerJob(ctx, arg any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcquireProvisionerJob", reflect.TypeOf((*MockStore)(nil).AcquireProvisionerJob), ctx, arg)
 }
 
+// AcquireStaleChatDiffStatuses mocks base method.
+func (m *MockStore) AcquireStaleChatDiffStatuses(ctx context.Context, limitVal int32) ([]database.AcquireStaleChatDiffStatusesRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AcquireStaleChatDiffStatuses", ctx, limitVal)
+	ret0, _ := ret[0].([]database.AcquireStaleChatDiffStatusesRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AcquireStaleChatDiffStatuses indicates an expected call of AcquireStaleChatDiffStatuses.
+func (mr *MockStoreMockRecorder) AcquireStaleChatDiffStatuses(ctx, limitVal any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcquireStaleChatDiffStatuses", reflect.TypeOf((*MockStore)(nil).AcquireStaleChatDiffStatuses), ctx, limitVal)
+}
+
 // ActivityBumpWorkspace mocks base method.
 func (m *MockStore) ActivityBumpWorkspace(ctx context.Context, arg database.ActivityBumpWorkspaceParams) error {
 	m.ctrl.T.Helper()
@@ -117,6 +147,20 @@ func (mr *MockStoreMockRecorder) AllUserIDs(ctx, includeSystem any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllUserIDs", reflect.TypeOf((*MockStore)(nil).AllUserIDs), ctx, includeSystem)
 }
 
+// ArchiveChatByID mocks base method.
+func (m *MockStore) ArchiveChatByID(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ArchiveChatByID", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ArchiveChatByID indicates an expected call of ArchiveChatByID.
+func (mr *MockStoreMockRecorder) ArchiveChatByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ArchiveChatByID", reflect.TypeOf((*MockStore)(nil).ArchiveChatByID), ctx, id)
+}
+
 // ArchiveUnusedTemplateVersions mocks base method.
 func (m *MockStore) ArchiveUnusedTemplateVersions(ctx context.Context, arg database.ArchiveUnusedTemplateVersionsParams) ([]uuid.UUID, error) {
 	m.ctrl.T.Helper()
@@ -130,6 +174,20 @@ func (m *MockStore) ArchiveUnusedTemplateVersions(ctx context.Context, arg datab
 func (mr *MockStoreMockRecorder) ArchiveUnusedTemplateVersions(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ArchiveUnusedTemplateVersions", reflect.TypeOf((*MockStore)(nil).ArchiveUnusedTemplateVersions), ctx, arg)
+}
+
+// BackoffChatDiffStatus mocks base method.
+func (m *MockStore) BackoffChatDiffStatus(ctx context.Context, arg database.BackoffChatDiffStatusParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BackoffChatDiffStatus", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BackoffChatDiffStatus indicates an expected call of BackoffChatDiffStatus.
+func (mr *MockStoreMockRecorder) BackoffChatDiffStatus(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BackoffChatDiffStatus", reflect.TypeOf((*MockStore)(nil).BackoffChatDiffStatus), ctx, arg)
 }
 
 // BatchUpdateWorkspaceAgentMetadata mocks base method.
@@ -499,6 +557,20 @@ func (mr *MockStoreMockRecorder) DeleteAPIKeysByUserID(ctx, userID any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAPIKeysByUserID", reflect.TypeOf((*MockStore)(nil).DeleteAPIKeysByUserID), ctx, userID)
 }
 
+// DeleteAllChatQueuedMessages mocks base method.
+func (m *MockStore) DeleteAllChatQueuedMessages(ctx context.Context, chatID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAllChatQueuedMessages", ctx, chatID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAllChatQueuedMessages indicates an expected call of DeleteAllChatQueuedMessages.
+func (mr *MockStoreMockRecorder) DeleteAllChatQueuedMessages(ctx, chatID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAllChatQueuedMessages", reflect.TypeOf((*MockStore)(nil).DeleteAllChatQueuedMessages), ctx, chatID)
+}
+
 // DeleteAllTailnetTunnels mocks base method.
 func (m *MockStore) DeleteAllTailnetTunnels(ctx context.Context, arg database.DeleteAllTailnetTunnelsParams) error {
 	m.ctrl.T.Helper()
@@ -539,6 +611,62 @@ func (m *MockStore) DeleteApplicationConnectAPIKeysByUserID(ctx context.Context,
 func (mr *MockStoreMockRecorder) DeleteApplicationConnectAPIKeysByUserID(ctx, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteApplicationConnectAPIKeysByUserID", reflect.TypeOf((*MockStore)(nil).DeleteApplicationConnectAPIKeysByUserID), ctx, userID)
+}
+
+// DeleteChatMessagesAfterID mocks base method.
+func (m *MockStore) DeleteChatMessagesAfterID(ctx context.Context, arg database.DeleteChatMessagesAfterIDParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteChatMessagesAfterID", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteChatMessagesAfterID indicates an expected call of DeleteChatMessagesAfterID.
+func (mr *MockStoreMockRecorder) DeleteChatMessagesAfterID(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteChatMessagesAfterID", reflect.TypeOf((*MockStore)(nil).DeleteChatMessagesAfterID), ctx, arg)
+}
+
+// DeleteChatModelConfigByID mocks base method.
+func (m *MockStore) DeleteChatModelConfigByID(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteChatModelConfigByID", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteChatModelConfigByID indicates an expected call of DeleteChatModelConfigByID.
+func (mr *MockStoreMockRecorder) DeleteChatModelConfigByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteChatModelConfigByID", reflect.TypeOf((*MockStore)(nil).DeleteChatModelConfigByID), ctx, id)
+}
+
+// DeleteChatProviderByID mocks base method.
+func (m *MockStore) DeleteChatProviderByID(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteChatProviderByID", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteChatProviderByID indicates an expected call of DeleteChatProviderByID.
+func (mr *MockStoreMockRecorder) DeleteChatProviderByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteChatProviderByID", reflect.TypeOf((*MockStore)(nil).DeleteChatProviderByID), ctx, id)
+}
+
+// DeleteChatQueuedMessage mocks base method.
+func (m *MockStore) DeleteChatQueuedMessage(ctx context.Context, arg database.DeleteChatQueuedMessageParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteChatQueuedMessage", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteChatQueuedMessage indicates an expected call of DeleteChatQueuedMessage.
+func (mr *MockStoreMockRecorder) DeleteChatQueuedMessage(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteChatQueuedMessage", reflect.TypeOf((*MockStore)(nil).DeleteChatQueuedMessage), ctx, arg)
 }
 
 // DeleteCryptoKey mocks base method.
@@ -597,20 +725,6 @@ func (m *MockStore) DeleteExternalAuthLink(ctx context.Context, arg database.Del
 func (mr *MockStoreMockRecorder) DeleteExternalAuthLink(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteExternalAuthLink", reflect.TypeOf((*MockStore)(nil).DeleteExternalAuthLink), ctx, arg)
-}
-
-// DeleteGitSSHKey mocks base method.
-func (m *MockStore) DeleteGitSSHKey(ctx context.Context, userID uuid.UUID) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteGitSSHKey", ctx, userID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteGitSSHKey indicates an expected call of DeleteGitSSHKey.
-func (mr *MockStoreMockRecorder) DeleteGitSSHKey(ctx, userID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteGitSSHKey", reflect.TypeOf((*MockStore)(nil).DeleteGitSSHKey), ctx, userID)
 }
 
 // DeleteGroupByID mocks base method.
@@ -1244,6 +1358,21 @@ func (mr *MockStoreMockRecorder) GetAIBridgeInterceptionByID(ctx, id any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAIBridgeInterceptionByID", reflect.TypeOf((*MockStore)(nil).GetAIBridgeInterceptionByID), ctx, id)
 }
 
+// GetAIBridgeInterceptionLineageByToolCallID mocks base method.
+func (m *MockStore) GetAIBridgeInterceptionLineageByToolCallID(ctx context.Context, toolCallID string) (database.GetAIBridgeInterceptionLineageByToolCallIDRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAIBridgeInterceptionLineageByToolCallID", ctx, toolCallID)
+	ret0, _ := ret[0].(database.GetAIBridgeInterceptionLineageByToolCallIDRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAIBridgeInterceptionLineageByToolCallID indicates an expected call of GetAIBridgeInterceptionLineageByToolCallID.
+func (mr *MockStoreMockRecorder) GetAIBridgeInterceptionLineageByToolCallID(ctx, toolCallID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAIBridgeInterceptionLineageByToolCallID", reflect.TypeOf((*MockStore)(nil).GetAIBridgeInterceptionLineageByToolCallID), ctx, toolCallID)
+}
+
 // GetAIBridgeInterceptions mocks base method.
 func (m *MockStore) GetAIBridgeInterceptions(ctx context.Context) ([]database.AIBridgeInterception, error) {
 	m.ctrl.T.Helper()
@@ -1335,18 +1464,18 @@ func (mr *MockStoreMockRecorder) GetAPIKeyByName(ctx, arg any) *gomock.Call {
 }
 
 // GetAPIKeysByLoginType mocks base method.
-func (m *MockStore) GetAPIKeysByLoginType(ctx context.Context, loginType database.LoginType) ([]database.APIKey, error) {
+func (m *MockStore) GetAPIKeysByLoginType(ctx context.Context, arg database.GetAPIKeysByLoginTypeParams) ([]database.APIKey, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAPIKeysByLoginType", ctx, loginType)
+	ret := m.ctrl.Call(m, "GetAPIKeysByLoginType", ctx, arg)
 	ret0, _ := ret[0].([]database.APIKey)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAPIKeysByLoginType indicates an expected call of GetAPIKeysByLoginType.
-func (mr *MockStoreMockRecorder) GetAPIKeysByLoginType(ctx, loginType any) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetAPIKeysByLoginType(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAPIKeysByLoginType", reflect.TypeOf((*MockStore)(nil).GetAPIKeysByLoginType), ctx, loginType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAPIKeysByLoginType", reflect.TypeOf((*MockStore)(nil).GetAPIKeysByLoginType), ctx, arg)
 }
 
 // GetAPIKeysByUserID mocks base method.
@@ -1499,21 +1628,6 @@ func (mr *MockStoreMockRecorder) GetAnnouncementBanners(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAnnouncementBanners", reflect.TypeOf((*MockStore)(nil).GetAnnouncementBanners), ctx)
 }
 
-// GetAppSecurityKey mocks base method.
-func (m *MockStore) GetAppSecurityKey(ctx context.Context) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAppSecurityKey", ctx)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAppSecurityKey indicates an expected call of GetAppSecurityKey.
-func (mr *MockStoreMockRecorder) GetAppSecurityKey(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSecurityKey", reflect.TypeOf((*MockStore)(nil).GetAppSecurityKey), ctx)
-}
-
 // GetApplicationName mocks base method.
 func (m *MockStore) GetApplicationName(ctx context.Context) (string, error) {
 	m.ctrl.T.Helper()
@@ -1634,21 +1748,6 @@ func (mr *MockStoreMockRecorder) GetAuthorizedUsers(ctx, arg, prepared any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthorizedUsers", reflect.TypeOf((*MockStore)(nil).GetAuthorizedUsers), ctx, arg, prepared)
 }
 
-// GetAuthorizedWorkspaceBuildParametersByBuildIDs mocks base method.
-func (m *MockStore) GetAuthorizedWorkspaceBuildParametersByBuildIDs(ctx context.Context, workspaceBuildIDs []uuid.UUID, prepared rbac.PreparedAuthorized) ([]database.WorkspaceBuildParameter, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAuthorizedWorkspaceBuildParametersByBuildIDs", ctx, workspaceBuildIDs, prepared)
-	ret0, _ := ret[0].([]database.WorkspaceBuildParameter)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAuthorizedWorkspaceBuildParametersByBuildIDs indicates an expected call of GetAuthorizedWorkspaceBuildParametersByBuildIDs.
-func (mr *MockStoreMockRecorder) GetAuthorizedWorkspaceBuildParametersByBuildIDs(ctx, workspaceBuildIDs, prepared any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthorizedWorkspaceBuildParametersByBuildIDs", reflect.TypeOf((*MockStore)(nil).GetAuthorizedWorkspaceBuildParametersByBuildIDs), ctx, workspaceBuildIDs, prepared)
-}
-
 // GetAuthorizedWorkspaces mocks base method.
 func (m *MockStore) GetAuthorizedWorkspaces(ctx context.Context, arg database.GetWorkspacesParams, prepared rbac.PreparedAuthorized) ([]database.GetWorkspacesRow, error) {
 	m.ctrl.T.Helper()
@@ -1679,6 +1778,261 @@ func (mr *MockStoreMockRecorder) GetAuthorizedWorkspacesAndAgentsByOwnerID(ctx, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthorizedWorkspacesAndAgentsByOwnerID", reflect.TypeOf((*MockStore)(nil).GetAuthorizedWorkspacesAndAgentsByOwnerID), ctx, ownerID, prepared)
 }
 
+// GetChatByID mocks base method.
+func (m *MockStore) GetChatByID(ctx context.Context, id uuid.UUID) (database.Chat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatByID", ctx, id)
+	ret0, _ := ret[0].(database.Chat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatByID indicates an expected call of GetChatByID.
+func (mr *MockStoreMockRecorder) GetChatByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatByID", reflect.TypeOf((*MockStore)(nil).GetChatByID), ctx, id)
+}
+
+// GetChatByIDForUpdate mocks base method.
+func (m *MockStore) GetChatByIDForUpdate(ctx context.Context, id uuid.UUID) (database.Chat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatByIDForUpdate", ctx, id)
+	ret0, _ := ret[0].(database.Chat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatByIDForUpdate indicates an expected call of GetChatByIDForUpdate.
+func (mr *MockStoreMockRecorder) GetChatByIDForUpdate(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatByIDForUpdate", reflect.TypeOf((*MockStore)(nil).GetChatByIDForUpdate), ctx, id)
+}
+
+// GetChatDiffStatusByChatID mocks base method.
+func (m *MockStore) GetChatDiffStatusByChatID(ctx context.Context, chatID uuid.UUID) (database.ChatDiffStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatDiffStatusByChatID", ctx, chatID)
+	ret0, _ := ret[0].(database.ChatDiffStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatDiffStatusByChatID indicates an expected call of GetChatDiffStatusByChatID.
+func (mr *MockStoreMockRecorder) GetChatDiffStatusByChatID(ctx, chatID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatDiffStatusByChatID", reflect.TypeOf((*MockStore)(nil).GetChatDiffStatusByChatID), ctx, chatID)
+}
+
+// GetChatDiffStatusesByChatIDs mocks base method.
+func (m *MockStore) GetChatDiffStatusesByChatIDs(ctx context.Context, chatIds []uuid.UUID) ([]database.ChatDiffStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatDiffStatusesByChatIDs", ctx, chatIds)
+	ret0, _ := ret[0].([]database.ChatDiffStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatDiffStatusesByChatIDs indicates an expected call of GetChatDiffStatusesByChatIDs.
+func (mr *MockStoreMockRecorder) GetChatDiffStatusesByChatIDs(ctx, chatIds any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatDiffStatusesByChatIDs", reflect.TypeOf((*MockStore)(nil).GetChatDiffStatusesByChatIDs), ctx, chatIds)
+}
+
+// GetChatFileByID mocks base method.
+func (m *MockStore) GetChatFileByID(ctx context.Context, id uuid.UUID) (database.ChatFile, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatFileByID", ctx, id)
+	ret0, _ := ret[0].(database.ChatFile)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatFileByID indicates an expected call of GetChatFileByID.
+func (mr *MockStoreMockRecorder) GetChatFileByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatFileByID", reflect.TypeOf((*MockStore)(nil).GetChatFileByID), ctx, id)
+}
+
+// GetChatFilesByIDs mocks base method.
+func (m *MockStore) GetChatFilesByIDs(ctx context.Context, ids []uuid.UUID) ([]database.ChatFile, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatFilesByIDs", ctx, ids)
+	ret0, _ := ret[0].([]database.ChatFile)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatFilesByIDs indicates an expected call of GetChatFilesByIDs.
+func (mr *MockStoreMockRecorder) GetChatFilesByIDs(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatFilesByIDs", reflect.TypeOf((*MockStore)(nil).GetChatFilesByIDs), ctx, ids)
+}
+
+// GetChatMessageByID mocks base method.
+func (m *MockStore) GetChatMessageByID(ctx context.Context, id int64) (database.ChatMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatMessageByID", ctx, id)
+	ret0, _ := ret[0].(database.ChatMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatMessageByID indicates an expected call of GetChatMessageByID.
+func (mr *MockStoreMockRecorder) GetChatMessageByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatMessageByID", reflect.TypeOf((*MockStore)(nil).GetChatMessageByID), ctx, id)
+}
+
+// GetChatMessagesByChatID mocks base method.
+func (m *MockStore) GetChatMessagesByChatID(ctx context.Context, arg database.GetChatMessagesByChatIDParams) ([]database.ChatMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatMessagesByChatID", ctx, arg)
+	ret0, _ := ret[0].([]database.ChatMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatMessagesByChatID indicates an expected call of GetChatMessagesByChatID.
+func (mr *MockStoreMockRecorder) GetChatMessagesByChatID(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatMessagesByChatID", reflect.TypeOf((*MockStore)(nil).GetChatMessagesByChatID), ctx, arg)
+}
+
+// GetChatMessagesForPromptByChatID mocks base method.
+func (m *MockStore) GetChatMessagesForPromptByChatID(ctx context.Context, chatID uuid.UUID) ([]database.ChatMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatMessagesForPromptByChatID", ctx, chatID)
+	ret0, _ := ret[0].([]database.ChatMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatMessagesForPromptByChatID indicates an expected call of GetChatMessagesForPromptByChatID.
+func (mr *MockStoreMockRecorder) GetChatMessagesForPromptByChatID(ctx, chatID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatMessagesForPromptByChatID", reflect.TypeOf((*MockStore)(nil).GetChatMessagesForPromptByChatID), ctx, chatID)
+}
+
+// GetChatModelConfigByID mocks base method.
+func (m *MockStore) GetChatModelConfigByID(ctx context.Context, id uuid.UUID) (database.ChatModelConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatModelConfigByID", ctx, id)
+	ret0, _ := ret[0].(database.ChatModelConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatModelConfigByID indicates an expected call of GetChatModelConfigByID.
+func (mr *MockStoreMockRecorder) GetChatModelConfigByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatModelConfigByID", reflect.TypeOf((*MockStore)(nil).GetChatModelConfigByID), ctx, id)
+}
+
+// GetChatModelConfigs mocks base method.
+func (m *MockStore) GetChatModelConfigs(ctx context.Context) ([]database.ChatModelConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatModelConfigs", ctx)
+	ret0, _ := ret[0].([]database.ChatModelConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatModelConfigs indicates an expected call of GetChatModelConfigs.
+func (mr *MockStoreMockRecorder) GetChatModelConfigs(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatModelConfigs", reflect.TypeOf((*MockStore)(nil).GetChatModelConfigs), ctx)
+}
+
+// GetChatProviderByID mocks base method.
+func (m *MockStore) GetChatProviderByID(ctx context.Context, id uuid.UUID) (database.ChatProvider, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatProviderByID", ctx, id)
+	ret0, _ := ret[0].(database.ChatProvider)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatProviderByID indicates an expected call of GetChatProviderByID.
+func (mr *MockStoreMockRecorder) GetChatProviderByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatProviderByID", reflect.TypeOf((*MockStore)(nil).GetChatProviderByID), ctx, id)
+}
+
+// GetChatProviderByProvider mocks base method.
+func (m *MockStore) GetChatProviderByProvider(ctx context.Context, provider string) (database.ChatProvider, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatProviderByProvider", ctx, provider)
+	ret0, _ := ret[0].(database.ChatProvider)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatProviderByProvider indicates an expected call of GetChatProviderByProvider.
+func (mr *MockStoreMockRecorder) GetChatProviderByProvider(ctx, provider any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatProviderByProvider", reflect.TypeOf((*MockStore)(nil).GetChatProviderByProvider), ctx, provider)
+}
+
+// GetChatProviders mocks base method.
+func (m *MockStore) GetChatProviders(ctx context.Context) ([]database.ChatProvider, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatProviders", ctx)
+	ret0, _ := ret[0].([]database.ChatProvider)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatProviders indicates an expected call of GetChatProviders.
+func (mr *MockStoreMockRecorder) GetChatProviders(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatProviders", reflect.TypeOf((*MockStore)(nil).GetChatProviders), ctx)
+}
+
+// GetChatQueuedMessages mocks base method.
+func (m *MockStore) GetChatQueuedMessages(ctx context.Context, chatID uuid.UUID) ([]database.ChatQueuedMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatQueuedMessages", ctx, chatID)
+	ret0, _ := ret[0].([]database.ChatQueuedMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatQueuedMessages indicates an expected call of GetChatQueuedMessages.
+func (mr *MockStoreMockRecorder) GetChatQueuedMessages(ctx, chatID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatQueuedMessages", reflect.TypeOf((*MockStore)(nil).GetChatQueuedMessages), ctx, chatID)
+}
+
+// GetChatSystemPrompt mocks base method.
+func (m *MockStore) GetChatSystemPrompt(ctx context.Context) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatSystemPrompt", ctx)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatSystemPrompt indicates an expected call of GetChatSystemPrompt.
+func (mr *MockStoreMockRecorder) GetChatSystemPrompt(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatSystemPrompt", reflect.TypeOf((*MockStore)(nil).GetChatSystemPrompt), ctx)
+}
+
+// GetChatsByOwnerID mocks base method.
+func (m *MockStore) GetChatsByOwnerID(ctx context.Context, arg database.GetChatsByOwnerIDParams) ([]database.Chat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatsByOwnerID", ctx, arg)
+	ret0, _ := ret[0].([]database.Chat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatsByOwnerID indicates an expected call of GetChatsByOwnerID.
+func (mr *MockStoreMockRecorder) GetChatsByOwnerID(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatsByOwnerID", reflect.TypeOf((*MockStore)(nil).GetChatsByOwnerID), ctx, arg)
+}
+
 // GetConnectionLogsOffset mocks base method.
 func (m *MockStore) GetConnectionLogsOffset(ctx context.Context, arg database.GetConnectionLogsOffsetParams) ([]database.GetConnectionLogsOffsetRow, error) {
 	m.ctrl.T.Helper()
@@ -1692,21 +2046,6 @@ func (m *MockStore) GetConnectionLogsOffset(ctx context.Context, arg database.Ge
 func (mr *MockStoreMockRecorder) GetConnectionLogsOffset(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConnectionLogsOffset", reflect.TypeOf((*MockStore)(nil).GetConnectionLogsOffset), ctx, arg)
-}
-
-// GetCoordinatorResumeTokenSigningKey mocks base method.
-func (m *MockStore) GetCoordinatorResumeTokenSigningKey(ctx context.Context) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCoordinatorResumeTokenSigningKey", ctx)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCoordinatorResumeTokenSigningKey indicates an expected call of GetCoordinatorResumeTokenSigningKey.
-func (mr *MockStoreMockRecorder) GetCoordinatorResumeTokenSigningKey(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCoordinatorResumeTokenSigningKey", reflect.TypeOf((*MockStore)(nil).GetCoordinatorResumeTokenSigningKey), ctx)
 }
 
 // GetCryptoKeyByFeatureAndSequence mocks base method.
@@ -1784,6 +2123,21 @@ func (mr *MockStoreMockRecorder) GetDERPMeshKey(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDERPMeshKey", reflect.TypeOf((*MockStore)(nil).GetDERPMeshKey), ctx)
 }
 
+// GetDefaultChatModelConfig mocks base method.
+func (m *MockStore) GetDefaultChatModelConfig(ctx context.Context) (database.ChatModelConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDefaultChatModelConfig", ctx)
+	ret0, _ := ret[0].(database.ChatModelConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDefaultChatModelConfig indicates an expected call of GetDefaultChatModelConfig.
+func (mr *MockStoreMockRecorder) GetDefaultChatModelConfig(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDefaultChatModelConfig", reflect.TypeOf((*MockStore)(nil).GetDefaultChatModelConfig), ctx)
+}
+
 // GetDefaultOrganization mocks base method.
 func (m *MockStore) GetDefaultOrganization(ctx context.Context) (database.Organization, error) {
 	m.ctrl.T.Helper()
@@ -1812,21 +2166,6 @@ func (m *MockStore) GetDefaultProxyConfig(ctx context.Context) (database.GetDefa
 func (mr *MockStoreMockRecorder) GetDefaultProxyConfig(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDefaultProxyConfig", reflect.TypeOf((*MockStore)(nil).GetDefaultProxyConfig), ctx)
-}
-
-// GetDeploymentDAUs mocks base method.
-func (m *MockStore) GetDeploymentDAUs(ctx context.Context, tzOffset int32) ([]database.GetDeploymentDAUsRow, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDeploymentDAUs", ctx, tzOffset)
-	ret0, _ := ret[0].([]database.GetDeploymentDAUsRow)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetDeploymentDAUs indicates an expected call of GetDeploymentDAUs.
-func (mr *MockStoreMockRecorder) GetDeploymentDAUs(ctx, tzOffset any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeploymentDAUs", reflect.TypeOf((*MockStore)(nil).GetDeploymentDAUs), ctx, tzOffset)
 }
 
 // GetDeploymentID mocks base method.
@@ -1904,6 +2243,36 @@ func (mr *MockStoreMockRecorder) GetEligibleProvisionerDaemonsByProvisionerJobID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEligibleProvisionerDaemonsByProvisionerJobIDs", reflect.TypeOf((*MockStore)(nil).GetEligibleProvisionerDaemonsByProvisionerJobIDs), ctx, provisionerJobIds)
 }
 
+// GetEnabledChatModelConfigs mocks base method.
+func (m *MockStore) GetEnabledChatModelConfigs(ctx context.Context) ([]database.ChatModelConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEnabledChatModelConfigs", ctx)
+	ret0, _ := ret[0].([]database.ChatModelConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEnabledChatModelConfigs indicates an expected call of GetEnabledChatModelConfigs.
+func (mr *MockStoreMockRecorder) GetEnabledChatModelConfigs(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEnabledChatModelConfigs", reflect.TypeOf((*MockStore)(nil).GetEnabledChatModelConfigs), ctx)
+}
+
+// GetEnabledChatProviders mocks base method.
+func (m *MockStore) GetEnabledChatProviders(ctx context.Context) ([]database.ChatProvider, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEnabledChatProviders", ctx)
+	ret0, _ := ret[0].([]database.ChatProvider)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEnabledChatProviders indicates an expected call of GetEnabledChatProviders.
+func (mr *MockStoreMockRecorder) GetEnabledChatProviders(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEnabledChatProviders", reflect.TypeOf((*MockStore)(nil).GetEnabledChatProviders), ctx)
+}
+
 // GetExternalAuthLink mocks base method.
 func (m *MockStore) GetExternalAuthLink(ctx context.Context, arg database.GetExternalAuthLinkParams) (database.ExternalAuthLink, error) {
 	m.ctrl.T.Helper()
@@ -1977,21 +2346,6 @@ func (m *MockStore) GetFileByID(ctx context.Context, id uuid.UUID) (database.Fil
 func (mr *MockStoreMockRecorder) GetFileByID(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileByID", reflect.TypeOf((*MockStore)(nil).GetFileByID), ctx, id)
-}
-
-// GetFileIDByTemplateVersionID mocks base method.
-func (m *MockStore) GetFileIDByTemplateVersionID(ctx context.Context, templateVersionID uuid.UUID) (uuid.UUID, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFileIDByTemplateVersionID", ctx, templateVersionID)
-	ret0, _ := ret[0].(uuid.UUID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetFileIDByTemplateVersionID indicates an expected call of GetFileIDByTemplateVersionID.
-func (mr *MockStoreMockRecorder) GetFileIDByTemplateVersionID(ctx, templateVersionID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileIDByTemplateVersionID", reflect.TypeOf((*MockStore)(nil).GetFileIDByTemplateVersionID), ctx, templateVersionID)
 }
 
 // GetFileTemplates mocks base method.
@@ -2172,6 +2526,21 @@ func (m *MockStore) GetInboxNotificationsByUserID(ctx context.Context, arg datab
 func (mr *MockStoreMockRecorder) GetInboxNotificationsByUserID(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInboxNotificationsByUserID", reflect.TypeOf((*MockStore)(nil).GetInboxNotificationsByUserID), ctx, arg)
+}
+
+// GetLastChatMessageByRole mocks base method.
+func (m *MockStore) GetLastChatMessageByRole(ctx context.Context, arg database.GetLastChatMessageByRoleParams) (database.ChatMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastChatMessageByRole", ctx, arg)
+	ret0, _ := ret[0].(database.ChatMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLastChatMessageByRole indicates an expected call of GetLastChatMessageByRole.
+func (mr *MockStoreMockRecorder) GetLastChatMessageByRole(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastChatMessageByRole", reflect.TypeOf((*MockStore)(nil).GetLastChatMessageByRole), ctx, arg)
 }
 
 // GetLastUpdateCheck mocks base method.
@@ -2429,21 +2798,6 @@ func (mr *MockStoreMockRecorder) GetOAuth2ProviderAppByID(ctx, id any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOAuth2ProviderAppByID", reflect.TypeOf((*MockStore)(nil).GetOAuth2ProviderAppByID), ctx, id)
 }
 
-// GetOAuth2ProviderAppByRegistrationToken mocks base method.
-func (m *MockStore) GetOAuth2ProviderAppByRegistrationToken(ctx context.Context, registrationAccessToken []byte) (database.OAuth2ProviderApp, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOAuth2ProviderAppByRegistrationToken", ctx, registrationAccessToken)
-	ret0, _ := ret[0].(database.OAuth2ProviderApp)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetOAuth2ProviderAppByRegistrationToken indicates an expected call of GetOAuth2ProviderAppByRegistrationToken.
-func (mr *MockStoreMockRecorder) GetOAuth2ProviderAppByRegistrationToken(ctx, registrationAccessToken any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOAuth2ProviderAppByRegistrationToken", reflect.TypeOf((*MockStore)(nil).GetOAuth2ProviderAppByRegistrationToken), ctx, registrationAccessToken)
-}
-
 // GetOAuth2ProviderAppCodeByID mocks base method.
 func (m *MockStore) GetOAuth2ProviderAppCodeByID(ctx context.Context, id uuid.UUID) (database.OAuth2ProviderAppCode, error) {
 	m.ctrl.T.Helper()
@@ -2577,21 +2931,6 @@ func (m *MockStore) GetOAuth2ProviderAppsByUserID(ctx context.Context, userID uu
 func (mr *MockStoreMockRecorder) GetOAuth2ProviderAppsByUserID(ctx, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOAuth2ProviderAppsByUserID", reflect.TypeOf((*MockStore)(nil).GetOAuth2ProviderAppsByUserID), ctx, userID)
-}
-
-// GetOAuthSigningKey mocks base method.
-func (m *MockStore) GetOAuthSigningKey(ctx context.Context) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOAuthSigningKey", ctx)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetOAuthSigningKey indicates an expected call of GetOAuthSigningKey.
-func (mr *MockStoreMockRecorder) GetOAuthSigningKey(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOAuthSigningKey", reflect.TypeOf((*MockStore)(nil).GetOAuthSigningKey), ctx)
 }
 
 // GetOrganizationByID mocks base method.
@@ -2969,21 +3308,6 @@ func (mr *MockStoreMockRecorder) GetProvisionerJobTimingsByJobID(ctx, jobID any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProvisionerJobTimingsByJobID", reflect.TypeOf((*MockStore)(nil).GetProvisionerJobTimingsByJobID), ctx, jobID)
 }
 
-// GetProvisionerJobsByIDs mocks base method.
-func (m *MockStore) GetProvisionerJobsByIDs(ctx context.Context, ids []uuid.UUID) ([]database.ProvisionerJob, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProvisionerJobsByIDs", ctx, ids)
-	ret0, _ := ret[0].([]database.ProvisionerJob)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetProvisionerJobsByIDs indicates an expected call of GetProvisionerJobsByIDs.
-func (mr *MockStoreMockRecorder) GetProvisionerJobsByIDs(ctx, ids any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProvisionerJobsByIDs", reflect.TypeOf((*MockStore)(nil).GetProvisionerJobsByIDs), ctx, ids)
-}
-
 // GetProvisionerJobsByIDsWithQueuePosition mocks base method.
 func (m *MockStore) GetProvisionerJobsByIDsWithQueuePosition(ctx context.Context, arg database.GetProvisionerJobsByIDsWithQueuePositionParams) ([]database.GetProvisionerJobsByIDsWithQueuePositionRow, error) {
 	m.ctrl.T.Helper()
@@ -3209,6 +3533,21 @@ func (mr *MockStoreMockRecorder) GetRuntimeConfig(ctx, key any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRuntimeConfig", reflect.TypeOf((*MockStore)(nil).GetRuntimeConfig), ctx, key)
 }
 
+// GetStaleChats mocks base method.
+func (m *MockStore) GetStaleChats(ctx context.Context, staleThreshold time.Time) ([]database.Chat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStaleChats", ctx, staleThreshold)
+	ret0, _ := ret[0].([]database.Chat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStaleChats indicates an expected call of GetStaleChats.
+func (mr *MockStoreMockRecorder) GetStaleChats(ctx, staleThreshold any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStaleChats", reflect.TypeOf((*MockStore)(nil).GetStaleChats), ctx, staleThreshold)
+}
+
 // GetTailnetPeers mocks base method.
 func (m *MockStore) GetTailnetPeers(ctx context.Context, id uuid.UUID) ([]database.TailnetPeer, error) {
 	m.ctrl.T.Helper()
@@ -3344,6 +3683,21 @@ func (mr *MockStoreMockRecorder) GetTelemetryItems(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTelemetryItems", reflect.TypeOf((*MockStore)(nil).GetTelemetryItems), ctx)
 }
 
+// GetTelemetryTaskEvents mocks base method.
+func (m *MockStore) GetTelemetryTaskEvents(ctx context.Context, arg database.GetTelemetryTaskEventsParams) ([]database.GetTelemetryTaskEventsRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTelemetryTaskEvents", ctx, arg)
+	ret0, _ := ret[0].([]database.GetTelemetryTaskEventsRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTelemetryTaskEvents indicates an expected call of GetTelemetryTaskEvents.
+func (mr *MockStoreMockRecorder) GetTelemetryTaskEvents(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTelemetryTaskEvents", reflect.TypeOf((*MockStore)(nil).GetTelemetryTaskEvents), ctx, arg)
+}
+
 // GetTemplateAppInsights mocks base method.
 func (m *MockStore) GetTemplateAppInsights(ctx context.Context, arg database.GetTemplateAppInsightsParams) ([]database.GetTemplateAppInsightsRow, error) {
 	m.ctrl.T.Helper()
@@ -3417,21 +3771,6 @@ func (m *MockStore) GetTemplateByOrganizationAndName(ctx context.Context, arg da
 func (mr *MockStoreMockRecorder) GetTemplateByOrganizationAndName(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTemplateByOrganizationAndName", reflect.TypeOf((*MockStore)(nil).GetTemplateByOrganizationAndName), ctx, arg)
-}
-
-// GetTemplateDAUs mocks base method.
-func (m *MockStore) GetTemplateDAUs(ctx context.Context, arg database.GetTemplateDAUsParams) ([]database.GetTemplateDAUsRow, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTemplateDAUs", ctx, arg)
-	ret0, _ := ret[0].([]database.GetTemplateDAUsRow)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTemplateDAUs indicates an expected call of GetTemplateDAUs.
-func (mr *MockStoreMockRecorder) GetTemplateDAUs(ctx, arg any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTemplateDAUs", reflect.TypeOf((*MockStore)(nil).GetTemplateDAUs), ctx, arg)
 }
 
 // GetTemplateGroupRoles mocks base method.
@@ -3597,21 +3936,6 @@ func (m *MockStore) GetTemplateVersionByTemplateIDAndName(ctx context.Context, a
 func (mr *MockStoreMockRecorder) GetTemplateVersionByTemplateIDAndName(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTemplateVersionByTemplateIDAndName", reflect.TypeOf((*MockStore)(nil).GetTemplateVersionByTemplateIDAndName), ctx, arg)
-}
-
-// GetTemplateVersionHasAITask mocks base method.
-func (m *MockStore) GetTemplateVersionHasAITask(ctx context.Context, id uuid.UUID) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTemplateVersionHasAITask", ctx, id)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTemplateVersionHasAITask indicates an expected call of GetTemplateVersionHasAITask.
-func (mr *MockStoreMockRecorder) GetTemplateVersionHasAITask(ctx, id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTemplateVersionHasAITask", reflect.TypeOf((*MockStore)(nil).GetTemplateVersionHasAITask), ctx, id)
 }
 
 // GetTemplateVersionParameters mocks base method.
@@ -3822,6 +4146,21 @@ func (m *MockStore) GetUserByID(ctx context.Context, id uuid.UUID) (database.Use
 func (mr *MockStoreMockRecorder) GetUserByID(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByID", reflect.TypeOf((*MockStore)(nil).GetUserByID), ctx, id)
+}
+
+// GetUserChatCustomPrompt mocks base method.
+func (m *MockStore) GetUserChatCustomPrompt(ctx context.Context, userID uuid.UUID) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserChatCustomPrompt", ctx, userID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserChatCustomPrompt indicates an expected call of GetUserChatCustomPrompt.
+func (mr *MockStoreMockRecorder) GetUserChatCustomPrompt(ctx, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserChatCustomPrompt", reflect.TypeOf((*MockStore)(nil).GetUserChatCustomPrompt), ctx, userID)
 }
 
 // GetUserCount mocks base method.
@@ -4559,19 +4898,19 @@ func (mr *MockStoreMockRecorder) GetWorkspaceBuildParameters(ctx, workspaceBuild
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkspaceBuildParameters", reflect.TypeOf((*MockStore)(nil).GetWorkspaceBuildParameters), ctx, workspaceBuildID)
 }
 
-// GetWorkspaceBuildParametersByBuildIDs mocks base method.
-func (m *MockStore) GetWorkspaceBuildParametersByBuildIDs(ctx context.Context, workspaceBuildIds []uuid.UUID) ([]database.WorkspaceBuildParameter, error) {
+// GetWorkspaceBuildProvisionerStateByID mocks base method.
+func (m *MockStore) GetWorkspaceBuildProvisionerStateByID(ctx context.Context, workspaceBuildID uuid.UUID) (database.GetWorkspaceBuildProvisionerStateByIDRow, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetWorkspaceBuildParametersByBuildIDs", ctx, workspaceBuildIds)
-	ret0, _ := ret[0].([]database.WorkspaceBuildParameter)
+	ret := m.ctrl.Call(m, "GetWorkspaceBuildProvisionerStateByID", ctx, workspaceBuildID)
+	ret0, _ := ret[0].(database.GetWorkspaceBuildProvisionerStateByIDRow)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetWorkspaceBuildParametersByBuildIDs indicates an expected call of GetWorkspaceBuildParametersByBuildIDs.
-func (mr *MockStoreMockRecorder) GetWorkspaceBuildParametersByBuildIDs(ctx, workspaceBuildIds any) *gomock.Call {
+// GetWorkspaceBuildProvisionerStateByID indicates an expected call of GetWorkspaceBuildProvisionerStateByID.
+func (mr *MockStoreMockRecorder) GetWorkspaceBuildProvisionerStateByID(ctx, workspaceBuildID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkspaceBuildParametersByBuildIDs", reflect.TypeOf((*MockStore)(nil).GetWorkspaceBuildParametersByBuildIDs), ctx, workspaceBuildIds)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkspaceBuildProvisionerStateByID", reflect.TypeOf((*MockStore)(nil).GetWorkspaceBuildProvisionerStateByID), ctx, workspaceBuildID)
 }
 
 // GetWorkspaceBuildStatsByTemplates mocks base method.
@@ -5081,6 +5420,96 @@ func (m *MockStore) InsertAuditLog(ctx context.Context, arg database.InsertAudit
 func (mr *MockStoreMockRecorder) InsertAuditLog(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertAuditLog", reflect.TypeOf((*MockStore)(nil).InsertAuditLog), ctx, arg)
+}
+
+// InsertChat mocks base method.
+func (m *MockStore) InsertChat(ctx context.Context, arg database.InsertChatParams) (database.Chat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertChat", ctx, arg)
+	ret0, _ := ret[0].(database.Chat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InsertChat indicates an expected call of InsertChat.
+func (mr *MockStoreMockRecorder) InsertChat(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertChat", reflect.TypeOf((*MockStore)(nil).InsertChat), ctx, arg)
+}
+
+// InsertChatFile mocks base method.
+func (m *MockStore) InsertChatFile(ctx context.Context, arg database.InsertChatFileParams) (database.InsertChatFileRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertChatFile", ctx, arg)
+	ret0, _ := ret[0].(database.InsertChatFileRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InsertChatFile indicates an expected call of InsertChatFile.
+func (mr *MockStoreMockRecorder) InsertChatFile(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertChatFile", reflect.TypeOf((*MockStore)(nil).InsertChatFile), ctx, arg)
+}
+
+// InsertChatMessage mocks base method.
+func (m *MockStore) InsertChatMessage(ctx context.Context, arg database.InsertChatMessageParams) (database.ChatMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertChatMessage", ctx, arg)
+	ret0, _ := ret[0].(database.ChatMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InsertChatMessage indicates an expected call of InsertChatMessage.
+func (mr *MockStoreMockRecorder) InsertChatMessage(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertChatMessage", reflect.TypeOf((*MockStore)(nil).InsertChatMessage), ctx, arg)
+}
+
+// InsertChatModelConfig mocks base method.
+func (m *MockStore) InsertChatModelConfig(ctx context.Context, arg database.InsertChatModelConfigParams) (database.ChatModelConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertChatModelConfig", ctx, arg)
+	ret0, _ := ret[0].(database.ChatModelConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InsertChatModelConfig indicates an expected call of InsertChatModelConfig.
+func (mr *MockStoreMockRecorder) InsertChatModelConfig(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertChatModelConfig", reflect.TypeOf((*MockStore)(nil).InsertChatModelConfig), ctx, arg)
+}
+
+// InsertChatProvider mocks base method.
+func (m *MockStore) InsertChatProvider(ctx context.Context, arg database.InsertChatProviderParams) (database.ChatProvider, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertChatProvider", ctx, arg)
+	ret0, _ := ret[0].(database.ChatProvider)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InsertChatProvider indicates an expected call of InsertChatProvider.
+func (mr *MockStoreMockRecorder) InsertChatProvider(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertChatProvider", reflect.TypeOf((*MockStore)(nil).InsertChatProvider), ctx, arg)
+}
+
+// InsertChatQueuedMessage mocks base method.
+func (m *MockStore) InsertChatQueuedMessage(ctx context.Context, arg database.InsertChatQueuedMessageParams) (database.ChatQueuedMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertChatQueuedMessage", ctx, arg)
+	ret0, _ := ret[0].(database.ChatQueuedMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InsertChatQueuedMessage indicates an expected call of InsertChatQueuedMessage.
+func (mr *MockStoreMockRecorder) InsertChatQueuedMessage(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertChatQueuedMessage", reflect.TypeOf((*MockStore)(nil).InsertChatQueuedMessage), ctx, arg)
 }
 
 // InsertCryptoKey mocks base method.
@@ -5673,20 +6102,6 @@ func (mr *MockStoreMockRecorder) InsertUserGroupsByID(ctx, arg any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertUserGroupsByID", reflect.TypeOf((*MockStore)(nil).InsertUserGroupsByID), ctx, arg)
 }
 
-// InsertUserGroupsByName mocks base method.
-func (m *MockStore) InsertUserGroupsByName(ctx context.Context, arg database.InsertUserGroupsByNameParams) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InsertUserGroupsByName", ctx, arg)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// InsertUserGroupsByName indicates an expected call of InsertUserGroupsByName.
-func (mr *MockStoreMockRecorder) InsertUserGroupsByName(ctx, arg any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertUserGroupsByName", reflect.TypeOf((*MockStore)(nil).InsertUserGroupsByName), ctx, arg)
-}
-
 // InsertUserLink mocks base method.
 func (m *MockStore) InsertUserLink(ctx context.Context, arg database.InsertUserLinkParams) (database.UserLink, error) {
 	m.ctrl.T.Helper()
@@ -6012,6 +6427,21 @@ func (mr *MockStoreMockRecorder) ListAIBridgeInterceptionsTelemetrySummaries(ctx
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAIBridgeInterceptionsTelemetrySummaries", reflect.TypeOf((*MockStore)(nil).ListAIBridgeInterceptionsTelemetrySummaries), ctx, arg)
 }
 
+// ListAIBridgeModels mocks base method.
+func (m *MockStore) ListAIBridgeModels(ctx context.Context, arg database.ListAIBridgeModelsParams) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAIBridgeModels", ctx, arg)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAIBridgeModels indicates an expected call of ListAIBridgeModels.
+func (mr *MockStoreMockRecorder) ListAIBridgeModels(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAIBridgeModels", reflect.TypeOf((*MockStore)(nil).ListAIBridgeModels), ctx, arg)
+}
+
 // ListAIBridgeTokenUsagesByInterceptionIDs mocks base method.
 func (m *MockStore) ListAIBridgeTokenUsagesByInterceptionIDs(ctx context.Context, interceptionIds []uuid.UUID) ([]database.AIBridgeTokenUsage, error) {
 	m.ctrl.T.Helper()
@@ -6070,6 +6500,21 @@ func (m *MockStore) ListAuthorizedAIBridgeInterceptions(ctx context.Context, arg
 func (mr *MockStoreMockRecorder) ListAuthorizedAIBridgeInterceptions(ctx, arg, prepared any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAuthorizedAIBridgeInterceptions", reflect.TypeOf((*MockStore)(nil).ListAuthorizedAIBridgeInterceptions), ctx, arg, prepared)
+}
+
+// ListAuthorizedAIBridgeModels mocks base method.
+func (m *MockStore) ListAuthorizedAIBridgeModels(ctx context.Context, arg database.ListAIBridgeModelsParams, prepared rbac.PreparedAuthorized) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAuthorizedAIBridgeModels", ctx, arg, prepared)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAuthorizedAIBridgeModels indicates an expected call of ListAuthorizedAIBridgeModels.
+func (mr *MockStoreMockRecorder) ListAuthorizedAIBridgeModels(ctx, arg, prepared any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAuthorizedAIBridgeModels", reflect.TypeOf((*MockStore)(nil).ListAuthorizedAIBridgeModels), ctx, arg, prepared)
 }
 
 // ListProvisionerKeysByOrganization mocks base method.
@@ -6251,6 +6696,21 @@ func (mr *MockStoreMockRecorder) Ping(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockStore)(nil).Ping), ctx)
 }
 
+// PopNextQueuedMessage mocks base method.
+func (m *MockStore) PopNextQueuedMessage(ctx context.Context, chatID uuid.UUID) (database.ChatQueuedMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PopNextQueuedMessage", ctx, chatID)
+	ret0, _ := ret[0].(database.ChatQueuedMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PopNextQueuedMessage indicates an expected call of PopNextQueuedMessage.
+func (mr *MockStoreMockRecorder) PopNextQueuedMessage(ctx, chatID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PopNextQueuedMessage", reflect.TypeOf((*MockStore)(nil).PopNextQueuedMessage), ctx, chatID)
+}
+
 // ReduceWorkspaceAgentShareLevelToAuthenticatedByTemplate mocks base method.
 func (m *MockStore) ReduceWorkspaceAgentShareLevelToAuthenticatedByTemplate(ctx context.Context, templateID uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -6278,20 +6738,6 @@ func (m *MockStore) RegisterWorkspaceProxy(ctx context.Context, arg database.Reg
 func (mr *MockStoreMockRecorder) RegisterWorkspaceProxy(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterWorkspaceProxy", reflect.TypeOf((*MockStore)(nil).RegisterWorkspaceProxy), ctx, arg)
-}
-
-// RemoveUserFromAllGroups mocks base method.
-func (m *MockStore) RemoveUserFromAllGroups(ctx context.Context, userID uuid.UUID) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveUserFromAllGroups", ctx, userID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RemoveUserFromAllGroups indicates an expected call of RemoveUserFromAllGroups.
-func (mr *MockStoreMockRecorder) RemoveUserFromAllGroups(ctx, userID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveUserFromAllGroups", reflect.TypeOf((*MockStore)(nil).RemoveUserFromAllGroups), ctx, userID)
 }
 
 // RemoveUserFromGroups mocks base method.
@@ -6353,6 +6799,20 @@ func (mr *MockStoreMockRecorder) TryAcquireLock(ctx, pgTryAdvisoryXactLock any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TryAcquireLock", reflect.TypeOf((*MockStore)(nil).TryAcquireLock), ctx, pgTryAdvisoryXactLock)
 }
 
+// UnarchiveChatByID mocks base method.
+func (m *MockStore) UnarchiveChatByID(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnarchiveChatByID", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UnarchiveChatByID indicates an expected call of UnarchiveChatByID.
+func (mr *MockStoreMockRecorder) UnarchiveChatByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnarchiveChatByID", reflect.TypeOf((*MockStore)(nil).UnarchiveChatByID), ctx, id)
+}
+
 // UnarchiveTemplateVersion mocks base method.
 func (m *MockStore) UnarchiveTemplateVersion(ctx context.Context, arg database.UnarchiveTemplateVersionParams) error {
 	m.ctrl.T.Helper()
@@ -6379,6 +6839,20 @@ func (m *MockStore) UnfavoriteWorkspace(ctx context.Context, id uuid.UUID) error
 func (mr *MockStoreMockRecorder) UnfavoriteWorkspace(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnfavoriteWorkspace", reflect.TypeOf((*MockStore)(nil).UnfavoriteWorkspace), ctx, id)
+}
+
+// UnsetDefaultChatModelConfigs mocks base method.
+func (m *MockStore) UnsetDefaultChatModelConfigs(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnsetDefaultChatModelConfigs", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UnsetDefaultChatModelConfigs indicates an expected call of UnsetDefaultChatModelConfigs.
+func (mr *MockStoreMockRecorder) UnsetDefaultChatModelConfigs(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnsetDefaultChatModelConfigs", reflect.TypeOf((*MockStore)(nil).UnsetDefaultChatModelConfigs), ctx)
 }
 
 // UpdateAIBridgeInterceptionEnded mocks base method.
@@ -6408,6 +6882,111 @@ func (m *MockStore) UpdateAPIKeyByID(ctx context.Context, arg database.UpdateAPI
 func (mr *MockStoreMockRecorder) UpdateAPIKeyByID(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAPIKeyByID", reflect.TypeOf((*MockStore)(nil).UpdateAPIKeyByID), ctx, arg)
+}
+
+// UpdateChatByID mocks base method.
+func (m *MockStore) UpdateChatByID(ctx context.Context, arg database.UpdateChatByIDParams) (database.Chat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateChatByID", ctx, arg)
+	ret0, _ := ret[0].(database.Chat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateChatByID indicates an expected call of UpdateChatByID.
+func (mr *MockStoreMockRecorder) UpdateChatByID(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChatByID", reflect.TypeOf((*MockStore)(nil).UpdateChatByID), ctx, arg)
+}
+
+// UpdateChatHeartbeat mocks base method.
+func (m *MockStore) UpdateChatHeartbeat(ctx context.Context, arg database.UpdateChatHeartbeatParams) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateChatHeartbeat", ctx, arg)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateChatHeartbeat indicates an expected call of UpdateChatHeartbeat.
+func (mr *MockStoreMockRecorder) UpdateChatHeartbeat(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChatHeartbeat", reflect.TypeOf((*MockStore)(nil).UpdateChatHeartbeat), ctx, arg)
+}
+
+// UpdateChatMessageByID mocks base method.
+func (m *MockStore) UpdateChatMessageByID(ctx context.Context, arg database.UpdateChatMessageByIDParams) (database.ChatMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateChatMessageByID", ctx, arg)
+	ret0, _ := ret[0].(database.ChatMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateChatMessageByID indicates an expected call of UpdateChatMessageByID.
+func (mr *MockStoreMockRecorder) UpdateChatMessageByID(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChatMessageByID", reflect.TypeOf((*MockStore)(nil).UpdateChatMessageByID), ctx, arg)
+}
+
+// UpdateChatModelConfig mocks base method.
+func (m *MockStore) UpdateChatModelConfig(ctx context.Context, arg database.UpdateChatModelConfigParams) (database.ChatModelConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateChatModelConfig", ctx, arg)
+	ret0, _ := ret[0].(database.ChatModelConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateChatModelConfig indicates an expected call of UpdateChatModelConfig.
+func (mr *MockStoreMockRecorder) UpdateChatModelConfig(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChatModelConfig", reflect.TypeOf((*MockStore)(nil).UpdateChatModelConfig), ctx, arg)
+}
+
+// UpdateChatProvider mocks base method.
+func (m *MockStore) UpdateChatProvider(ctx context.Context, arg database.UpdateChatProviderParams) (database.ChatProvider, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateChatProvider", ctx, arg)
+	ret0, _ := ret[0].(database.ChatProvider)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateChatProvider indicates an expected call of UpdateChatProvider.
+func (mr *MockStoreMockRecorder) UpdateChatProvider(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChatProvider", reflect.TypeOf((*MockStore)(nil).UpdateChatProvider), ctx, arg)
+}
+
+// UpdateChatStatus mocks base method.
+func (m *MockStore) UpdateChatStatus(ctx context.Context, arg database.UpdateChatStatusParams) (database.Chat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateChatStatus", ctx, arg)
+	ret0, _ := ret[0].(database.Chat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateChatStatus indicates an expected call of UpdateChatStatus.
+func (mr *MockStoreMockRecorder) UpdateChatStatus(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChatStatus", reflect.TypeOf((*MockStore)(nil).UpdateChatStatus), ctx, arg)
+}
+
+// UpdateChatWorkspace mocks base method.
+func (m *MockStore) UpdateChatWorkspace(ctx context.Context, arg database.UpdateChatWorkspaceParams) (database.Chat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateChatWorkspace", ctx, arg)
+	ret0, _ := ret[0].(database.Chat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateChatWorkspace indicates an expected call of UpdateChatWorkspace.
+func (mr *MockStoreMockRecorder) UpdateChatWorkspace(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChatWorkspace", reflect.TypeOf((*MockStore)(nil).UpdateChatWorkspace), ctx, arg)
 }
 
 // UpdateCryptoKeyDeletesAt mocks base method.
@@ -6600,21 +7179,6 @@ func (m *MockStore) UpdateOAuth2ProviderAppByID(ctx context.Context, arg databas
 func (mr *MockStoreMockRecorder) UpdateOAuth2ProviderAppByID(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOAuth2ProviderAppByID", reflect.TypeOf((*MockStore)(nil).UpdateOAuth2ProviderAppByID), ctx, arg)
-}
-
-// UpdateOAuth2ProviderAppSecretByID mocks base method.
-func (m *MockStore) UpdateOAuth2ProviderAppSecretByID(ctx context.Context, arg database.UpdateOAuth2ProviderAppSecretByIDParams) (database.OAuth2ProviderAppSecret, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOAuth2ProviderAppSecretByID", ctx, arg)
-	ret0, _ := ret[0].(database.OAuth2ProviderAppSecret)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdateOAuth2ProviderAppSecretByID indicates an expected call of UpdateOAuth2ProviderAppSecretByID.
-func (mr *MockStoreMockRecorder) UpdateOAuth2ProviderAppSecretByID(ctx, arg any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOAuth2ProviderAppSecretByID", reflect.TypeOf((*MockStore)(nil).UpdateOAuth2ProviderAppSecretByID), ctx, arg)
 }
 
 // UpdateOrganization mocks base method.
@@ -7030,6 +7594,21 @@ func (mr *MockStoreMockRecorder) UpdateUsageEventsPostPublish(ctx, arg any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUsageEventsPostPublish", reflect.TypeOf((*MockStore)(nil).UpdateUsageEventsPostPublish), ctx, arg)
 }
 
+// UpdateUserChatCustomPrompt mocks base method.
+func (m *MockStore) UpdateUserChatCustomPrompt(ctx context.Context, arg database.UpdateUserChatCustomPromptParams) (database.UserConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUserChatCustomPrompt", ctx, arg)
+	ret0, _ := ret[0].(database.UserConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateUserChatCustomPrompt indicates an expected call of UpdateUserChatCustomPrompt.
+func (mr *MockStoreMockRecorder) UpdateUserChatCustomPrompt(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserChatCustomPrompt", reflect.TypeOf((*MockStore)(nil).UpdateUserChatCustomPrompt), ctx, arg)
+}
+
 // UpdateUserDeletedByID mocks base method.
 func (m *MockStore) UpdateUserDeletedByID(ctx context.Context, id uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -7114,21 +7693,6 @@ func (m *MockStore) UpdateUserLink(ctx context.Context, arg database.UpdateUserL
 func (mr *MockStoreMockRecorder) UpdateUserLink(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserLink", reflect.TypeOf((*MockStore)(nil).UpdateUserLink), ctx, arg)
-}
-
-// UpdateUserLinkedID mocks base method.
-func (m *MockStore) UpdateUserLinkedID(ctx context.Context, arg database.UpdateUserLinkedIDParams) (database.UserLink, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateUserLinkedID", ctx, arg)
-	ret0, _ := ret[0].(database.UserLink)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdateUserLinkedID indicates an expected call of UpdateUserLinkedID.
-func (mr *MockStoreMockRecorder) UpdateUserLinkedID(ctx, arg any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserLinkedID", reflect.TypeOf((*MockStore)(nil).UpdateUserLinkedID), ctx, arg)
 }
 
 // UpdateUserLoginType mocks base method.
@@ -7649,20 +8213,6 @@ func (mr *MockStoreMockRecorder) UpsertAnnouncementBanners(ctx, value any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAnnouncementBanners", reflect.TypeOf((*MockStore)(nil).UpsertAnnouncementBanners), ctx, value)
 }
 
-// UpsertAppSecurityKey mocks base method.
-func (m *MockStore) UpsertAppSecurityKey(ctx context.Context, value string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertAppSecurityKey", ctx, value)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertAppSecurityKey indicates an expected call of UpsertAppSecurityKey.
-func (mr *MockStoreMockRecorder) UpsertAppSecurityKey(ctx, value any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAppSecurityKey", reflect.TypeOf((*MockStore)(nil).UpsertAppSecurityKey), ctx, value)
-}
-
 // UpsertApplicationName mocks base method.
 func (m *MockStore) UpsertApplicationName(ctx context.Context, value string) error {
 	m.ctrl.T.Helper()
@@ -7692,6 +8242,50 @@ func (mr *MockStoreMockRecorder) UpsertBoundaryUsageStats(ctx, arg any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertBoundaryUsageStats", reflect.TypeOf((*MockStore)(nil).UpsertBoundaryUsageStats), ctx, arg)
 }
 
+// UpsertChatDiffStatus mocks base method.
+func (m *MockStore) UpsertChatDiffStatus(ctx context.Context, arg database.UpsertChatDiffStatusParams) (database.ChatDiffStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertChatDiffStatus", ctx, arg)
+	ret0, _ := ret[0].(database.ChatDiffStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpsertChatDiffStatus indicates an expected call of UpsertChatDiffStatus.
+func (mr *MockStoreMockRecorder) UpsertChatDiffStatus(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertChatDiffStatus", reflect.TypeOf((*MockStore)(nil).UpsertChatDiffStatus), ctx, arg)
+}
+
+// UpsertChatDiffStatusReference mocks base method.
+func (m *MockStore) UpsertChatDiffStatusReference(ctx context.Context, arg database.UpsertChatDiffStatusReferenceParams) (database.ChatDiffStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertChatDiffStatusReference", ctx, arg)
+	ret0, _ := ret[0].(database.ChatDiffStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpsertChatDiffStatusReference indicates an expected call of UpsertChatDiffStatusReference.
+func (mr *MockStoreMockRecorder) UpsertChatDiffStatusReference(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertChatDiffStatusReference", reflect.TypeOf((*MockStore)(nil).UpsertChatDiffStatusReference), ctx, arg)
+}
+
+// UpsertChatSystemPrompt mocks base method.
+func (m *MockStore) UpsertChatSystemPrompt(ctx context.Context, value string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertChatSystemPrompt", ctx, value)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertChatSystemPrompt indicates an expected call of UpsertChatSystemPrompt.
+func (mr *MockStoreMockRecorder) UpsertChatSystemPrompt(ctx, value any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertChatSystemPrompt", reflect.TypeOf((*MockStore)(nil).UpsertChatSystemPrompt), ctx, value)
+}
+
 // UpsertConnectionLog mocks base method.
 func (m *MockStore) UpsertConnectionLog(ctx context.Context, arg database.UpsertConnectionLogParams) (database.ConnectionLog, error) {
 	m.ctrl.T.Helper()
@@ -7705,20 +8299,6 @@ func (m *MockStore) UpsertConnectionLog(ctx context.Context, arg database.Upsert
 func (mr *MockStoreMockRecorder) UpsertConnectionLog(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertConnectionLog", reflect.TypeOf((*MockStore)(nil).UpsertConnectionLog), ctx, arg)
-}
-
-// UpsertCoordinatorResumeTokenSigningKey mocks base method.
-func (m *MockStore) UpsertCoordinatorResumeTokenSigningKey(ctx context.Context, value string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertCoordinatorResumeTokenSigningKey", ctx, value)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertCoordinatorResumeTokenSigningKey indicates an expected call of UpsertCoordinatorResumeTokenSigningKey.
-func (mr *MockStoreMockRecorder) UpsertCoordinatorResumeTokenSigningKey(ctx, value any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertCoordinatorResumeTokenSigningKey", reflect.TypeOf((*MockStore)(nil).UpsertCoordinatorResumeTokenSigningKey), ctx, value)
 }
 
 // UpsertDefaultProxy mocks base method.
@@ -7817,20 +8397,6 @@ func (m *MockStore) UpsertOAuth2GithubDefaultEligible(ctx context.Context, eligi
 func (mr *MockStoreMockRecorder) UpsertOAuth2GithubDefaultEligible(ctx, eligible any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertOAuth2GithubDefaultEligible", reflect.TypeOf((*MockStore)(nil).UpsertOAuth2GithubDefaultEligible), ctx, eligible)
-}
-
-// UpsertOAuthSigningKey mocks base method.
-func (m *MockStore) UpsertOAuthSigningKey(ctx context.Context, value string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertOAuthSigningKey", ctx, value)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertOAuthSigningKey indicates an expected call of UpsertOAuthSigningKey.
-func (mr *MockStoreMockRecorder) UpsertOAuthSigningKey(ctx, value any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertOAuthSigningKey", reflect.TypeOf((*MockStore)(nil).UpsertOAuthSigningKey), ctx, value)
 }
 
 // UpsertPrebuildsSettings mocks base method.

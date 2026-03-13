@@ -82,6 +82,12 @@ sql:
           - column: "template_usage_stats.app_usage_mins"
             go_type:
               type: "StringMapOfInt"
+          - column: "tasks_with_status.workspace_user_acl"
+            go_type:
+              type: "WorkspaceACL"
+          - column: "tasks_with_status.workspace_group_acl"
+            go_type:
+              type: "WorkspaceACL"
           - column: "workspaces.user_acl"
             go_type:
               type: "WorkspaceACL"
@@ -124,6 +130,24 @@ sql:
           - column: "tasks_with_status.workspace_app_health"
             go_type:
               type: "NullWorkspaceAppHealth"
+          # Workaround for sqlc not interpreting the left join correctly
+          # in the combined telemetry query.
+          - column: "task_event_data.start_build_number"
+            go_type: "database/sql.NullInt32"
+          - column: "task_event_data.stop_build_created_at"
+            go_type: "database/sql.NullTime"
+          - column: "task_event_data.stop_build_reason"
+            go_type:
+              type: "NullBuildReason"
+          - column: "task_event_data.start_build_created_at"
+            go_type: "database/sql.NullTime"
+          - column: "task_event_data.start_build_reason"
+            go_type:
+              type: "NullBuildReason"
+          - column: "task_event_data.last_working_status_at"
+            go_type: "database/sql.NullTime"
+          - column: "task_event_data.first_status_after_resume_at"
+            go_type: "database/sql.NullTime"
         rename:
           group_member: GroupMemberTable
           group_members_expanded: GroupMember
@@ -168,6 +192,8 @@ sql:
           jwt: JWT
           user_acl: UserACL
           group_acl: GroupACL
+          workspace_user_acl: WorkspaceUserACL
+          workspace_group_acl: WorkspaceGroupACL
           user_acl_display_info: UserACLDisplayInfo
           group_acl_display_info: GroupACLDisplayInfo
           troubleshooting_url: TroubleshootingURL

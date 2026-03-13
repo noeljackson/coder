@@ -155,14 +155,31 @@ func (t Task) TaskTable() TaskTable {
 }
 
 func (t Task) RBACObject() rbac.Object {
-	return t.TaskTable().RBACObject()
-}
-
-func (t TaskTable) RBACObject() rbac.Object {
-	return rbac.ResourceTask.
+	obj := rbac.ResourceTask.
 		WithID(t.ID).
 		WithOwner(t.OwnerID.String()).
 		InOrg(t.OrganizationID)
+
+	if rbac.WorkspaceACLDisabled() {
+		return obj
+	}
+
+	if t.WorkspaceGroupACL != nil {
+		obj = obj.WithGroupACL(t.WorkspaceGroupACL.RBACACL())
+	}
+	if t.WorkspaceUserACL != nil {
+		obj = obj.WithACLUserList(t.WorkspaceUserACL.RBACACL())
+	}
+
+	return obj
+}
+
+func (c Chat) RBACObject() rbac.Object {
+	return rbac.ResourceChat.WithID(c.ID).WithOwner(c.OwnerID.String())
+}
+
+func (c ChatFile) RBACObject() rbac.Object {
+	return rbac.ResourceChat.WithID(c.ID).WithOwner(c.OwnerID.String()).InOrg(c.OrganizationID)
 }
 
 func (s APIKeyScope) ToRBAC() rbac.ScopeName {
@@ -310,6 +327,14 @@ func (t Template) RBACObject() rbac.Object {
 }
 
 func (t GetFileTemplatesRow) RBACObject() rbac.Object {
+	return rbac.ResourceTemplate.WithID(t.TemplateID).
+		InOrg(t.TemplateOrganizationID).
+		WithACLUserList(t.UserACL).
+		WithGroupACL(t.GroupACL)
+}
+
+// RBACObject for a workspace build's provisioner state requires Update access of the template.
+func (t GetWorkspaceBuildProvisionerStateByIDRow) RBACObject() rbac.Object {
 	return rbac.ResourceTemplate.WithID(t.TemplateID).
 		InOrg(t.TemplateOrganizationID).
 		WithACLUserList(t.UserACL).
@@ -638,20 +663,21 @@ func ConvertUserRows(rows []GetUsersRow) []User {
 	users := make([]User, len(rows))
 	for i, r := range rows {
 		users[i] = User{
-			ID:             r.ID,
-			Email:          r.Email,
-			Username:       r.Username,
-			Name:           r.Name,
-			HashedPassword: r.HashedPassword,
-			CreatedAt:      r.CreatedAt,
-			UpdatedAt:      r.UpdatedAt,
-			Status:         r.Status,
-			RBACRoles:      r.RBACRoles,
-			LoginType:      r.LoginType,
-			AvatarURL:      r.AvatarURL,
-			Deleted:        r.Deleted,
-			LastSeenAt:     r.LastSeenAt,
-			IsSystem:       r.IsSystem,
+			ID:               r.ID,
+			Email:            r.Email,
+			Username:         r.Username,
+			Name:             r.Name,
+			HashedPassword:   r.HashedPassword,
+			CreatedAt:        r.CreatedAt,
+			UpdatedAt:        r.UpdatedAt,
+			Status:           r.Status,
+			RBACRoles:        r.RBACRoles,
+			LoginType:        r.LoginType,
+			AvatarURL:        r.AvatarURL,
+			Deleted:          r.Deleted,
+			LastSeenAt:       r.LastSeenAt,
+			IsSystem:         r.IsSystem,
+			IsServiceAccount: r.IsServiceAccount,
 		}
 	}
 
