@@ -564,7 +564,7 @@ func (s *server) acquireProtoJob(ctx context.Context, job database.ProvisionerJo
 		// The check `s.OIDCConfig != nil` is not as strict, since it can be an interface
 		// pointing to a typed nil.
 		if !reflect.ValueOf(s.OIDCConfig).IsNil() {
-			workspaceOwnerOIDCAccessToken, err = obtainOIDCAccessToken(ctx, s.Database, s.OIDCConfig, owner.ID)
+			workspaceOwnerOIDCAccessToken, err = ObtainOIDCAccessToken(ctx, s.Logger, s.Database, s.OIDCConfig, owner.ID)
 			if err != nil {
 				return nil, failJob(fmt.Sprintf("obtain OIDC access token: %s", err))
 			}
@@ -725,11 +725,16 @@ func (s *server) acquireProtoJob(ctx context.Context, job database.ProvisionerJo
 			}
 		}
 
+		provisionerStateRow, err := s.Database.GetWorkspaceBuildProvisionerStateByID(ctx, workspaceBuild.ID)
+		if err != nil {
+			return nil, failJob(fmt.Sprintf("get workspace build provisioner state: %s", err))
+		}
+
 		protoJob.Type = &proto.AcquiredJob_WorkspaceBuild_{
 			WorkspaceBuild: &proto.AcquiredJob_WorkspaceBuild{
 				WorkspaceBuildId:        workspaceBuild.ID.String(),
 				WorkspaceName:           workspace.Name,
-				State:                   workspaceBuild.ProvisionerState,
+				State:                   provisionerStateRow.ProvisionerState,
 				RichParameterValues:     convertRichParameterValues(workspaceBuildParameters),
 				PreviousParameterValues: convertRichParameterValues(lastWorkspaceBuildParameters),
 				VariableValues:          asVariableValues(templateVariables),
@@ -840,7 +845,11 @@ func (s *server) acquireProtoJob(ctx context.Context, job database.ProvisionerJo
 
 	// Record the time the job spent waiting in the queue.
 	if s.metrics != nil && job.StartedAt.Valid && job.Provisioner.Valid() {
-		queueWaitSeconds := job.StartedAt.Time.Sub(job.CreatedAt).Seconds()
+		// These timestamps lose their monotonic clock component after a Postgres
+		// round-trip, so the subtraction is based purely on wall-clock time. Floor at
+		// 1ms as a defensive measure against clock adjustments producing a negative
+		// delta while acknowledging there's a non-zero queue time.
+		queueWaitSeconds := max(job.StartedAt.Time.Sub(job.CreatedAt).Seconds(), 0.001)
 		s.metrics.ObserveJobQueueWait(string(job.Provisioner), string(job.Type), jobTransition, jobBuildReason, queueWaitSeconds)
 	}
 
@@ -1280,6 +1289,21 @@ func (s *server) FailJob(ctx context.Context, failJob *proto.FailedJob) (*proto.
 		if err != nil {
 			return nil, xerrors.Errorf("publish workspace update: %w", err)
 		}
+
+		// Publish workspace build update to the all builds channel if the experiment is enabled.
+		if s.Experiments.Enabled(codersdk.ExperimentWorkspaceBuildUpdates) {
+			err = wspubsub.PublishWorkspaceBuildUpdate(ctx, s.Pubsub, codersdk.WorkspaceBuildUpdate{
+				WorkspaceID:   workspace.ID,
+				WorkspaceName: workspace.Name,
+				BuildID:       build.ID,
+				Transition:    string(build.Transition),
+				JobStatus:     string(database.ProvisionerJobStatusFailed),
+				BuildNumber:   build.BuildNumber,
+			})
+			if err != nil {
+				s.Logger.Warn(ctx, "failed to publish workspace build update", slog.Error(err))
+			}
+		}
 	case *proto.FailedJob_TemplateImport_:
 	}
 
@@ -1519,13 +1543,18 @@ func (s *server) DownloadFile(request *proto.FileRequest, stream proto.DRPCProvi
 
 	// A graceful error message will help debugging.
 	fail := func(err error) error {
-		_ = stream.Send(&sdkproto.FileUpload{
+		if sendErr := stream.Send(&sdkproto.FileUpload{
 			Type: &sdkproto.FileUpload_Error{
 				Error: &sdkproto.FailedFile{
 					Error: err.Error(),
 				},
 			},
-		})
+		}); sendErr != nil {
+			s.Logger.Warn(ctx, "failed to send error response on download stream",
+				slog.Error(sendErr),
+				slog.F("original_error", err.Error()),
+			)
+		}
 		return err
 	}
 	if request.FileId == "" || request.FileId == uuid.Nil.String() {
@@ -2475,6 +2504,21 @@ func (s *server) completeWorkspaceBuildJob(ctx context.Context, job database.Pro
 		return xerrors.Errorf("update workspace: %w", err)
 	}
 
+	// Publish workspace build update to the all builds channel if the experiment is enabled.
+	if s.Experiments.Enabled(codersdk.ExperimentWorkspaceBuildUpdates) {
+		err = wspubsub.PublishWorkspaceBuildUpdate(ctx, s.Pubsub, codersdk.WorkspaceBuildUpdate{
+			WorkspaceID:   workspace.ID,
+			WorkspaceName: workspace.Name,
+			BuildID:       workspaceBuild.ID,
+			Transition:    string(workspaceBuild.Transition),
+			JobStatus:     string(database.ProvisionerJobStatusSucceeded),
+			BuildNumber:   workspaceBuild.BuildNumber,
+		})
+		if err != nil {
+			s.Logger.Warn(ctx, "failed to publish workspace build update", slog.Error(err))
+		}
+	}
+
 	if input.PrebuiltWorkspaceBuildStage == sdkproto.PrebuiltWorkspaceBuildStage_CLAIM {
 		s.Logger.Info(ctx, "workspace prebuild successfully claimed by user",
 			slog.F("workspace_id", workspace.ID))
@@ -3066,9 +3110,37 @@ func deleteSessionTokenForUserAndWorkspace(ctx context.Context, db database.Stor
 	return nil
 }
 
-// obtainOIDCAccessToken returns a valid OpenID Connect access token
+func shouldRefreshOIDCToken(link database.UserLink) (bool, time.Time) {
+	if link.OAuthRefreshToken == "" {
+		// We cannot refresh even if we wanted to
+		return false, link.OAuthExpiry
+	}
+
+	if link.OAuthExpiry.IsZero() {
+		// 0 expire means the token never expires, so we shouldn't refresh
+		return false, link.OAuthExpiry
+	}
+
+	// This handles an edge case where the token is about to expire. A workspace
+	// build takes a non-trivial amount of time. If the token is to expire during the
+	// build, then the build risks failure. To mitigate this, refresh the token
+	// prematurely.
+	//
+	// If an OIDC provider issues short-lived tokens less than our defined period,
+	// the token will always be refreshed on every workspace build.
+	//
+	// By setting the expiration backwards, we are effectively shortening the
+	// time a token can be alive for by 10 minutes.
+	// Note: This is how it is done in the oauth2 package's own token refreshing logic.
+	expiresAt := link.OAuthExpiry.Add(-time.Minute * 10)
+
+	// Return if the token is assumed to be expired.
+	return expiresAt.Before(dbtime.Now()), expiresAt
+}
+
+// ObtainOIDCAccessToken returns a valid OpenID Connect access token
 // for the user if it's able to obtain one, otherwise it returns an empty string.
-func obtainOIDCAccessToken(ctx context.Context, db database.Store, oidcConfig promoauth.OAuth2Config, userID uuid.UUID) (string, error) {
+func ObtainOIDCAccessToken(ctx context.Context, logger slog.Logger, db database.Store, oidcConfig promoauth.OAuth2Config, userID uuid.UUID) (string, error) {
 	link, err := db.GetUserLinkByUserIDLoginType(ctx, database.GetUserLinkByUserIDLoginTypeParams{
 		UserID:    userID,
 		LoginType: database.LoginTypeOIDC,
@@ -3080,11 +3152,13 @@ func obtainOIDCAccessToken(ctx context.Context, db database.Store, oidcConfig pr
 		return "", xerrors.Errorf("get owner oidc link: %w", err)
 	}
 
-	if link.OAuthExpiry.Before(dbtime.Now()) && !link.OAuthExpiry.IsZero() && link.OAuthRefreshToken != "" {
+	if shouldRefresh, expiresAt := shouldRefreshOIDCToken(link); shouldRefresh {
 		token, err := oidcConfig.TokenSource(ctx, &oauth2.Token{
 			AccessToken:  link.OAuthAccessToken,
 			RefreshToken: link.OAuthRefreshToken,
-			Expiry:       link.OAuthExpiry,
+			// Use the expiresAt returned by shouldRefreshOIDCToken.
+			// It will force a refresh with an expired time.
+			Expiry: expiresAt,
 		}).Token()
 		if err != nil {
 			// If OIDC fails to refresh, we return an empty string and don't fail.
@@ -3109,6 +3183,7 @@ func obtainOIDCAccessToken(ctx context.Context, db database.Store, oidcConfig pr
 		if err != nil {
 			return "", xerrors.Errorf("update user link: %w", err)
 		}
+		logger.Info(ctx, "refreshed expired OIDC token for user during workspace build", slog.F("user_id", userID))
 	}
 
 	return link.OAuthAccessToken, nil
@@ -3319,7 +3394,7 @@ func insertDevcontainerSubagent(
 		ResourceID:               resourceID,
 		Name:                     dc.GetName(),
 		AuthToken:                uuid.New(),
-		AuthInstanceID:           parentAgent.AuthInstanceID,
+		AuthInstanceID:           sql.NullString{},
 		Architecture:             parentAgent.Architecture,
 		EnvironmentVariables:     envJSON,
 		Directory:                dc.GetWorkspaceFolder(),
@@ -3481,10 +3556,11 @@ func insertAgentApp(ctx context.Context, db database.Store, agentID uuid.UUID, a
 	appSlugs[slug] = struct{}{}
 
 	health := database.WorkspaceAppHealthDisabled
-	if app.Healthcheck == nil {
-		app.Healthcheck = &sdkproto.Healthcheck{}
+	healthcheck := app.GetHealthcheck()
+	if healthcheck == nil {
+		healthcheck = &sdkproto.Healthcheck{}
 	}
-	if app.Healthcheck.Url != "" {
+	if healthcheck.Url != "" {
 		health = database.WorkspaceAppHealthInitializing
 	}
 
@@ -3539,9 +3615,9 @@ func insertAgentApp(ctx context.Context, db database.Store, agentID uuid.UUID, a
 		External:             app.External,
 		Subdomain:            app.Subdomain,
 		SharingLevel:         sharingLevel,
-		HealthcheckUrl:       app.Healthcheck.Url,
-		HealthcheckInterval:  app.Healthcheck.Interval,
-		HealthcheckThreshold: app.Healthcheck.Threshold,
+		HealthcheckUrl:       healthcheck.Url,
+		HealthcheckInterval:  healthcheck.Interval,
+		HealthcheckThreshold: healthcheck.Threshold,
 		Health:               health,
 		// #nosec G115 - Order represents a display order value that's always small and fits in int32
 		DisplayOrder: int32(app.Order),

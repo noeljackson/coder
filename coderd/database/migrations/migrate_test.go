@@ -138,7 +138,6 @@ func TestCheckLatestVersion(t *testing.T) {
 	}
 
 	for i, tc := range tests {
-		i, tc := i, tc
 		t.Run(fmt.Sprintf("entry %d", i), func(t *testing.T) {
 			t.Parallel()
 
@@ -296,10 +295,6 @@ func TestMigrateUpWithFixtures(t *testing.T) {
 
 			db := testSQLDB(t)
 
-			// This test occasionally timed out in CI, which is understandable
-			// considering the amount of migrations and fixtures we have.
-			ctx := testutil.Context(t, testutil.WaitSuperLong)
-
 			// Prepare database for stepping up.
 			err := migrations.Down(db)
 			require.NoError(t, err)
@@ -337,6 +332,8 @@ func TestMigrateUpWithFixtures(t *testing.T) {
 				t.Logf("migrated to version %d, fixture version %d", version, fixtureVer)
 			}
 
+			ctx := testutil.Context(t, testutil.WaitSuperLong)
+
 			// Gather number of rows for all existing tables
 			// at the end of the migrations and fixtures.
 			var tables pq.StringArray
@@ -373,9 +370,6 @@ func TestMigration000362AggregateUsageEvents(t *testing.T) {
 	t.Parallel()
 
 	const migrationVersion = 362
-
-	// Similarly to the other test, this test will probably time out in CI.
-	ctx := testutil.Context(t, testutil.WaitSuperLong)
 
 	sqlDB := testSQLDB(t)
 	db := database.New(sqlDB)
@@ -431,6 +425,7 @@ func TestMigration000362AggregateUsageEvents(t *testing.T) {
 		},
 	}
 
+	ctx := testutil.Context(t, testutil.WaitSuperLong)
 	for _, usageEvent := range usageEvents {
 		err := db.InsertUsageEvent(ctx, database.InsertUsageEventParams{
 			ID:        uuid.New().String(),
@@ -495,7 +490,6 @@ func TestMigration000387MigrateTaskWorkspaces(t *testing.T) {
 
 	const migrationVersion = 387
 
-	ctx := testutil.Context(t, testutil.WaitLong)
 	sqlDB := testSQLDB(t)
 
 	// Migrate up to the migration before the task workspace migration.
@@ -563,6 +557,7 @@ func TestMigration000387MigrateTaskWorkspaces(t *testing.T) {
 	wsAntBuild1ID := uuid.New()
 
 	// Create all fixtures in a single transaction.
+	ctx := testutil.Context(t, testutil.WaitSuperLong)
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	require.NoError(t, err)
 	defer tx.Rollback()

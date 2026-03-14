@@ -16,6 +16,7 @@ deploy_branch=main
 # Determine the current branch name and check that it is one of the supported
 # branch names.
 branch_name=$(git branch --show-current)
+
 if [[ "$branch_name" != "main" && ! "$branch_name" =~ ^release/[0-9]+\.[0-9]+$ ]]; then
 	error "Current branch '$branch_name' is not a supported branch name for dogfood, must be 'main' or 'release/x.y'"
 fi

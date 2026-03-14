@@ -25,7 +25,7 @@ var AuditActionMap = map[string][]codersdk.AuditAction{
 	"Workspace":       {codersdk.AuditActionCreate, codersdk.AuditActionWrite, codersdk.AuditActionDelete},
 	"WorkspaceBuild":  {codersdk.AuditActionStart, codersdk.AuditActionStop},
 	"Group":           {codersdk.AuditActionCreate, codersdk.AuditActionWrite, codersdk.AuditActionDelete},
-	"APIKey":          {codersdk.AuditActionLogin, codersdk.AuditActionLogout, codersdk.AuditActionRegister, codersdk.AuditActionCreate, codersdk.AuditActionDelete},
+	"APIKey":          {codersdk.AuditActionLogin, codersdk.AuditActionLogout, codersdk.AuditActionRegister, codersdk.AuditActionCreate, codersdk.AuditActionWrite, codersdk.AuditActionDelete},
 	"License":         {codersdk.AuditActionCreate, codersdk.AuditActionDelete},
 	"Task":            {codersdk.AuditActionCreate, codersdk.AuditActionWrite, codersdk.AuditActionDelete},
 }
@@ -160,6 +160,7 @@ var auditableResourcesTypes = map[any]map[string]Action{
 		"hashed_one_time_passcode":     ActionIgnore,
 		"one_time_passcode_expires_at": ActionTrack,
 		"is_system":                    ActionTrack, // Should never change, but track it anyway.
+		"is_service_account":           ActionTrack, // Should never change, but track it anyway.
 	},
 	&database.WorkspaceTable{}: {
 		"id":                 ActionTrack,
@@ -190,7 +191,6 @@ var auditableResourcesTypes = map[any]map[string]Action{
 		"build_number":               ActionIgnore,
 		"transition":                 ActionIgnore,
 		"initiator_id":               ActionIgnore,
-		"provisioner_state":          ActionIgnore,
 		"job_id":                     ActionIgnore,
 		"deadline":                   ActionIgnore,
 		"reason":                     ActionIgnore,

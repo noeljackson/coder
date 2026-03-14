@@ -135,6 +135,34 @@ const docTemplate = `{
                 }
             }
         },
+        "/aibridge/models": {
+            "get": {
+                "security": [
+                    {
+                        "CoderSessionToken": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI Bridge"
+                ],
+                "summary": "List AI Bridge models",
+                "operationId": "list-ai-bridge-models",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/appearance": {
             "get": {
                 "security": [
@@ -449,6 +477,49 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/codersdk.BuildInfoResponse"
                         }
+                    }
+                }
+            }
+        },
+        "/chats/{chat}/archive": {
+            "post": {
+                "tags": [
+                    "Chats"
+                ],
+                "summary": "Archive a chat",
+                "operationId": "archive-chat",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/chats/{chat}/desktop": {
+            "get": {
+                "security": [
+                    {
+                        "CoderSessionToken": []
+                    }
+                ],
+                "tags": [
+                    "Chats"
+                ],
+                "summary": "Watch chat desktop",
+                "operationId": "watch-chat-desktop",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Chat ID",
+                        "name": "chat",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols"
                     }
                 }
             }
@@ -841,6 +912,28 @@ const docTemplate = `{
                 }
             }
         },
+        "/debug/profile": {
+            "post": {
+                "security": [
+                    {
+                        "CoderSessionToken": []
+                    }
+                ],
+                "tags": [
+                    "Debug"
+                ],
+                "summary": "Collect debug profiles",
+                "operationId": "collect-debug-profiles",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "x-apidocgen": {
+                    "skip": true
+                }
+            }
+        },
         "/debug/tailnet": {
             "get": {
                 "security": [
@@ -1038,6 +1131,31 @@ const docTemplate = `{
                             "$ref": "#/definitions/codersdk.Entitlements"
                         }
                     }
+                }
+            }
+        },
+        "/experimental/watch-all-workspacebuilds": {
+            "get": {
+                "security": [
+                    {
+                        "CoderSessionToken": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Watch all workspace builds",
+                "operationId": "watch-all-workspace-builds",
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols"
+                    }
+                },
+                "x-apidocgen": {
+                    "skip": true
                 }
             }
         },
@@ -1748,11 +1866,16 @@ const docTemplate = `{
                 "operationId": "get-insights-about-user-status-counts",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "IANA timezone name (e.g. America/St_Johns)",
+                        "name": "timezone",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
-                        "description": "Time-zone offset (e.g. -2)",
+                        "description": "Deprecated: Time-zone offset (e.g. -2). Use timezone instead.",
                         "name": "tz_offset",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3745,6 +3868,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/organizations/{organization}/members/{user}/workspaces/available-users": {
+            "get": {
+                "security": [
+                    {
+                        "CoderSessionToken": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Get users available for workspace creation",
+                "operationId": "get-users-available-for-workspace-creation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Organization ID",
+                        "name": "organization",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID, name, or me",
+                        "name": "user",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit results",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/codersdk.MinimalUser"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/organizations/{organization}/paginated-members": {
             "get": {
                 "security": [
@@ -4684,7 +4870,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/codersdk.WorkspaceSharingSettings"
+                            "$ref": "#/definitions/codersdk.UpdateWorkspaceSharingSettingsRequest"
                         }
                     }
                 }
@@ -5831,7 +6017,7 @@ const docTemplate = `{
                         "CoderSessionToken": []
                     }
                 ],
-                "consumes": [
+                "produces": [
                     "application/json"
                 ],
                 "tags": [
@@ -5873,7 +6059,7 @@ const docTemplate = `{
                         "CoderSessionToken": []
                     }
                 ],
-                "consumes": [
+                "produces": [
                     "application/json"
                 ],
                 "tags": [
@@ -8175,6 +8361,12 @@ const docTemplate = `{
                         "name": "user",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Include expired tokens in the list",
+                        "name": "include_expired",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -8382,6 +8574,54 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/users/{user}/keys/{keyid}/expire": {
+            "put": {
+                "security": [
+                    {
+                        "CoderSessionToken": []
+                    }
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Expire API key",
+                "operationId": "expire-api-key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID, name, or me",
+                        "name": "user",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "string",
+                        "description": "Key ID",
+                        "name": "keyid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/codersdk.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/codersdk.Response"
+                        }
                     }
                 }
             }
@@ -9434,6 +9674,7 @@ const docTemplate = `{
                 ],
                 "summary": "Patch workspace agent app status",
                 "operationId": "patch-workspace-agent-app-status",
+                "deprecated": true,
                 "parameters": [
                     {
                         "description": "app status",
@@ -12275,6 +12516,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "inject_coder_mcp_tools": {
+                    "description": "Deprecated: Injected MCP in AI Bridge is deprecated and will be removed in a future release.",
                     "type": "boolean"
                 },
                 "max_concurrency": {
@@ -12301,6 +12543,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "api_key_id": {
+                    "type": "string"
+                },
+                "client": {
                     "type": "string"
                 },
                 "ended_at": {
@@ -12392,6 +12637,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "listen_addr": {
+                    "type": "string"
+                },
+                "tls_cert_file": {
+                    "type": "string"
+                },
+                "tls_key_file": {
                     "type": "string"
                 },
                 "upstream_proxy": {
@@ -12634,6 +12885,11 @@ const docTemplate = `{
                 "boundary_usage:delete",
                 "boundary_usage:read",
                 "boundary_usage:update",
+                "chat:*",
+                "chat:create",
+                "chat:delete",
+                "chat:read",
+                "chat:update",
                 "coder:all",
                 "coder:apikeys.manage_self",
                 "coder:application_connect",
@@ -12838,6 +13094,11 @@ const docTemplate = `{
                 "APIKeyScopeBoundaryUsageDelete",
                 "APIKeyScopeBoundaryUsageRead",
                 "APIKeyScopeBoundaryUsageUpdate",
+                "APIKeyScopeChatAll",
+                "APIKeyScopeChatCreate",
+                "APIKeyScopeChatDelete",
+                "APIKeyScopeChatRead",
+                "APIKeyScopeChatUpdate",
                 "APIKeyScopeCoderAll",
                 "APIKeyScopeCoderApikeysManageSelf",
                 "APIKeyScopeCoderApplicationConnect",
@@ -13502,7 +13763,10 @@ const docTemplate = `{
                 "cli",
                 "ssh_connection",
                 "vscode_connection",
-                "jetbrains_connection"
+                "jetbrains_connection",
+                "task_auto_pause",
+                "task_manual_pause",
+                "task_resume"
             ],
             "x-enum-varnames": [
                 "BuildReasonInitiator",
@@ -13513,7 +13777,10 @@ const docTemplate = `{
                 "BuildReasonCLI",
                 "BuildReasonSSHConnection",
                 "BuildReasonVSCodeConnection",
-                "BuildReasonJetbrainsConnection"
+                "BuildReasonJetbrainsConnection",
+                "BuildReasonTaskAutoPause",
+                "BuildReasonTaskManualPause",
+                "BuildReasonTaskResume"
             ]
         },
         "codersdk.CORSBehavior": {
@@ -14136,7 +14403,6 @@ const docTemplate = `{
         "codersdk.CreateUserRequestWithOrgs": {
             "type": "object",
             "required": [
-                "email",
                 "username"
             ],
             "properties": {
@@ -14165,6 +14431,10 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string"
+                },
+                "service_account": {
+                    "description": "Service accounts are admin-managed accounts that cannot login.",
+                    "type": "boolean"
                 },
                 "user_status": {
                     "description": "UserStatus defaults to UserStatusDormant.",
@@ -14693,6 +14963,9 @@ const docTemplate = `{
                 "external_auth": {
                     "$ref": "#/definitions/serpent.Struct-array_codersdk_ExternalAuthConfig"
                 },
+                "external_auth_github_default_provider_enable": {
+                    "type": "boolean"
+                },
                 "external_token_encryption_keys": {
                     "type": "array",
                     "items": {
@@ -14983,17 +15256,19 @@ const docTemplate = `{
                 "workspace-usage",
                 "web-push",
                 "oauth2",
+                "agents",
                 "mcp-server-http",
-                "workspace-sharing"
+                "workspace-build-updates"
             ],
             "x-enum-comments": {
+                "ExperimentAgents": "Enables agent-powered chat functionality.",
                 "ExperimentAutoFillParameters": "This should not be taken out of experiments until we have redesigned the feature.",
                 "ExperimentExample": "This isn't used for anything.",
                 "ExperimentMCPServerHTTP": "Enables the MCP HTTP server functionality.",
                 "ExperimentNotifications": "Sends notifications via SMTP and webhooks following certain events.",
                 "ExperimentOAuth2": "Enables OAuth2 provider functionality.",
                 "ExperimentWebPush": "Enables web push notifications through the browser.",
-                "ExperimentWorkspaceSharing": "Enables updating workspace ACLs for sharing with users and groups.",
+                "ExperimentWorkspaceBuildUpdates": "Enables publishing workspace build updates to the all builds pubsub channel.",
                 "ExperimentWorkspaceUsage": "Enables the new workspace usage tracking."
             },
             "x-enum-descriptions": [
@@ -15003,8 +15278,9 @@ const docTemplate = `{
                 "Enables the new workspace usage tracking.",
                 "Enables web push notifications through the browser.",
                 "Enables OAuth2 provider functionality.",
+                "Enables agent-powered chat functionality.",
                 "Enables the MCP HTTP server functionality.",
-                "Enables updating workspace ACLs for sharing with users and groups."
+                "Enables publishing workspace build updates to the all builds pubsub channel."
             ],
             "x-enum-varnames": [
                 "ExperimentExample",
@@ -15013,8 +15289,9 @@ const docTemplate = `{
                 "ExperimentWorkspaceUsage",
                 "ExperimentWebPush",
                 "ExperimentOAuth2",
+                "ExperimentAgents",
                 "ExperimentMCPServerHTTP",
-                "ExperimentWorkspaceSharing"
+                "ExperimentWorkspaceBuildUpdates"
             ]
         },
         "codersdk.ExternalAPIKeyScopes": {
@@ -15096,6 +15373,10 @@ const docTemplate = `{
         "codersdk.ExternalAuthConfig": {
             "type": "object",
             "properties": {
+                "api_base_url": {
+                    "description": "APIBaseURL is the base URL for provider REST API calls\n(e.g., \"https://api.github.com\" for GitHub). Derived from\ndefaults when not explicitly configured.",
+                    "type": "string"
+                },
                 "app_install_url": {
                     "type": "string"
                 },
@@ -15134,12 +15415,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "mcp_tool_allow_regex": {
+                    "description": "Deprecated: Injected MCP in AI Bridge is deprecated and will be removed in a future release.",
                     "type": "string"
                 },
                 "mcp_tool_deny_regex": {
+                    "description": "Deprecated: Injected MCP in AI Bridge is deprecated and will be removed in a future release.",
                     "type": "string"
                 },
                 "mcp_url": {
+                    "description": "Deprecated: Injected MCP in AI Bridge is deprecated and will be removed in a future release.",
                     "type": "string"
                 },
                 "no_refresh": {
@@ -15252,10 +15536,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/codersdk.Entitlement"
                 },
                 "limit": {
-                    "type": "integer"
-                },
-                "soft_limit": {
-                    "description": "SoftLimit is the soft limit of the feature, and is only used for showing\nincluded limits in the dashboard. No license validation or warnings are\ngenerated from this value.",
                     "type": "integer"
                 },
                 "usage_period": {
@@ -15461,6 +15741,9 @@ const docTemplate = `{
         "codersdk.HTTPCookieConfig": {
             "type": "object",
             "properties": {
+                "host_prefix": {
+                    "type": "boolean"
+                },
                 "same_site": {
                     "type": "string"
                 },
@@ -16670,6 +16953,14 @@ const docTemplate = `{
                 },
                 "organization_mapping": {
                     "type": "object"
+                },
+                "redirect_url": {
+                    "description": "RedirectURL is optional, defaulting to 'ACCESS_URL'. Only useful in niche\nsituations where the OIDC callback domain is different from the ACCESS_URL\ndomain.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/serpent.URL"
+                        }
+                    ]
                 },
                 "scopes": {
                     "type": "array",
@@ -17947,6 +18238,7 @@ const docTemplate = `{
                 "assign_role",
                 "audit_log",
                 "boundary_usage",
+                "chat",
                 "connection_log",
                 "crypto_key",
                 "debug_info",
@@ -17992,6 +18284,7 @@ const docTemplate = `{
                 "ResourceAssignRole",
                 "ResourceAuditLog",
                 "ResourceBoundaryUsage",
+                "ResourceChat",
                 "ResourceConnectionLog",
                 "ResourceCryptoKey",
                 "ResourceDebugInfo",
@@ -18925,6 +19218,9 @@ const docTemplate = `{
                 "default_ttl_ms": {
                     "type": "integer"
                 },
+                "deleted": {
+                    "type": "boolean"
+                },
                 "deprecated": {
                     "type": "boolean"
                 },
@@ -19659,6 +19955,7 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "",
+                "geist-mono",
                 "ibm-plex-mono",
                 "fira-code",
                 "source-code-pro",
@@ -19666,6 +19963,7 @@ const docTemplate = `{
             ],
             "x-enum-varnames": [
                 "TerminalFontUnknown",
+                "TerminalFontGeistMono",
                 "TerminalFontIBMPlexMono",
                 "TerminalFontFiraCode",
                 "TerminalFontSourceCodePro",
@@ -20071,6 +20369,14 @@ const docTemplate = `{
             "properties": {
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "codersdk.UpdateWorkspaceSharingSettingsRequest": {
+            "type": "object",
+            "properties": {
+                "sharing_disabled": {
+                    "type": "boolean"
                 }
             }
         },
@@ -21912,6 +22218,10 @@ const docTemplate = `{
             "properties": {
                 "sharing_disabled": {
                     "type": "boolean"
+                },
+                "sharing_globally_disabled": {
+                    "description": "SharingGloballyDisabled is true if sharing has been disabled for this\norganization because of a deployment-wide setting.",
+                    "type": "boolean"
                 }
             }
         },
@@ -22751,7 +23061,7 @@ const docTemplate = `{
                     ]
                 },
                 "default": {
-                    "description": "Default is parsed into Value if set.",
+                    "description": "Default is parsed into Value if set.\nMust be ` + "`" + `\"\"` + "`" + ` if ` + "`" + `DefaultFn` + "`" + ` != nil",
                     "type": "string"
                 },
                 "description": {

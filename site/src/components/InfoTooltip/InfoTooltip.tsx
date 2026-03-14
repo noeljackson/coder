@@ -12,7 +12,7 @@ import { cn } from "utils/cn";
 
 interface InfoTooltipProps {
 	type?: ThemeRole;
-	title: ReactNode;
+	title?: ReactNode;
 	message: ReactNode;
 }
 
@@ -24,7 +24,7 @@ const tooltipColorClasses: Record<ThemeRole, string> = {
 	success: "text-content-success",
 	danger: "text-content-destructive",
 	active: "text-content-link",
-	inactive: "text-highlight-grey",
+	inactive: "text-content-secondary",
 	preview: "text-highlight-purple",
 };
 
@@ -39,7 +39,7 @@ export const InfoTooltip: FC<InfoTooltipProps> = ({
 				<HelpTooltipIcon className={cn(tooltipColorClasses[type])} />
 			</HelpTooltipIconTrigger>
 			<HelpTooltipContent>
-				<HelpTooltipTitle>{title}</HelpTooltipTitle>
+				{title && <HelpTooltipTitle>{title}</HelpTooltipTitle>}
 				<HelpTooltipText>{message}</HelpTooltipText>
 			</HelpTooltipContent>
 		</HelpTooltip>

@@ -38,6 +38,7 @@ site/.swc
 
 # Make target for updating generated/golden files (any dir).
 .gen
+/_gen/
 .gen-golden
 
 # Build
@@ -98,3 +99,6 @@ AGENTS.local.md
 
 # Ignore plans written by AI agents.
 PLAN.md
+
+# Ignore any dev licenses
+license.txt
