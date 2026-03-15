@@ -210,7 +210,12 @@ CREATE TYPE api_key_scope AS ENUM (
     'boundary_usage:read',
     'boundary_usage:update',
     'workspace:update_agent',
-    'workspace_dormant:update_agent'
+    'workspace_dormant:update_agent',
+    'chat:create',
+    'chat:read',
+    'chat:update',
+    'chat:delete',
+    'chat:*'
 );
 
 CREATE TYPE app_sharing_level AS ENUM (
@@ -258,6 +263,32 @@ CREATE TYPE build_reason AS ENUM (
     'task_auto_pause',
     'task_manual_pause',
     'task_resume'
+);
+
+CREATE TYPE chat_message_role AS ENUM (
+    'system',
+    'user',
+    'assistant',
+    'tool'
+);
+
+CREATE TYPE chat_message_visibility AS ENUM (
+    'user',
+    'model',
+    'both'
+);
+
+CREATE TYPE chat_mode AS ENUM (
+    'computer_use'
+);
+
+CREATE TYPE chat_status AS ENUM (
+    'waiting',
+    'pending',
+    'running',
+    'paused',
+    'completed',
+    'error'
 );
 
 CREATE TYPE connection_status AS ENUM (
@@ -1023,12 +1054,22 @@ CREATE TABLE aibridge_interceptions (
     started_at timestamp with time zone NOT NULL,
     metadata jsonb,
     ended_at timestamp with time zone,
-    api_key_id text
+    api_key_id text,
+    client character varying(64) DEFAULT 'Unknown'::character varying,
+    thread_parent_id uuid,
+    thread_root_id uuid,
+    client_session_id character varying(256)
 );
 
 COMMENT ON TABLE aibridge_interceptions IS 'Audit log of requests intercepted by AI Bridge';
 
 COMMENT ON COLUMN aibridge_interceptions.initiator_id IS 'Relates to a users record, but FK is elided for performance.';
+
+COMMENT ON COLUMN aibridge_interceptions.thread_parent_id IS 'The interception which directly caused this interception to occur, usually through an agentic loop or threaded conversation.';
+
+COMMENT ON COLUMN aibridge_interceptions.thread_root_id IS 'The root interception of the thread that this interception belongs to.';
+
+COMMENT ON COLUMN aibridge_interceptions.client_session_id IS 'The session ID supplied by the client (optional and not universally supported).';
 
 CREATE TABLE aibridge_token_usages (
     id uuid NOT NULL,
@@ -1054,7 +1095,8 @@ CREATE TABLE aibridge_tool_usages (
     injected boolean DEFAULT false NOT NULL,
     invocation_error text,
     metadata jsonb,
-    created_at timestamp with time zone NOT NULL
+    created_at timestamp with time zone NOT NULL,
+    provider_tool_call_id text
 );
 
 COMMENT ON TABLE aibridge_tool_usages IS 'Audit log of tool calls in intercepted requests in AI Bridge';
@@ -1142,6 +1184,143 @@ COMMENT ON COLUMN boundary_usage_stats.denied_requests IS 'Total denied requests
 COMMENT ON COLUMN boundary_usage_stats.window_start IS 'Start of the time window for these stats, set on first flush after reset.';
 
 COMMENT ON COLUMN boundary_usage_stats.updated_at IS 'Timestamp of the last update to this row.';
+
+CREATE TABLE chat_diff_statuses (
+    chat_id uuid NOT NULL,
+    url text,
+    pull_request_state text,
+    changes_requested boolean DEFAULT false NOT NULL,
+    additions integer DEFAULT 0 NOT NULL,
+    deletions integer DEFAULT 0 NOT NULL,
+    changed_files integer DEFAULT 0 NOT NULL,
+    refreshed_at timestamp with time zone,
+    stale_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    git_branch text DEFAULT ''::text NOT NULL,
+    git_remote_origin text DEFAULT ''::text NOT NULL,
+    pull_request_title text DEFAULT ''::text NOT NULL,
+    pull_request_draft boolean DEFAULT false NOT NULL,
+    author_login text,
+    author_avatar_url text,
+    base_branch text,
+    pr_number integer,
+    commits integer,
+    approved boolean,
+    reviewer_count integer,
+    head_branch text
+);
+
+CREATE TABLE chat_files (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    owner_id uuid NOT NULL,
+    organization_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    name text DEFAULT ''::text NOT NULL,
+    mimetype text NOT NULL,
+    data bytea NOT NULL
+);
+
+CREATE TABLE chat_messages (
+    id bigint NOT NULL,
+    chat_id uuid NOT NULL,
+    model_config_id uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    role chat_message_role NOT NULL,
+    content jsonb,
+    visibility chat_message_visibility DEFAULT 'both'::chat_message_visibility NOT NULL,
+    input_tokens bigint,
+    output_tokens bigint,
+    total_tokens bigint,
+    reasoning_tokens bigint,
+    cache_creation_tokens bigint,
+    cache_read_tokens bigint,
+    context_limit bigint,
+    compressed boolean DEFAULT false NOT NULL,
+    created_by uuid,
+    content_version smallint NOT NULL,
+    total_cost_micros bigint
+);
+
+CREATE SEQUENCE chat_messages_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE chat_messages_id_seq OWNED BY chat_messages.id;
+
+CREATE TABLE chat_model_configs (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    provider text NOT NULL,
+    model text NOT NULL,
+    display_name text DEFAULT ''::text NOT NULL,
+    created_by uuid,
+    updated_by uuid,
+    enabled boolean DEFAULT true NOT NULL,
+    is_default boolean DEFAULT false NOT NULL,
+    deleted boolean DEFAULT false NOT NULL,
+    deleted_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    context_limit bigint NOT NULL,
+    compression_threshold integer NOT NULL,
+    options jsonb DEFAULT '{}'::jsonb NOT NULL,
+    CONSTRAINT chat_model_configs_compression_threshold_check CHECK (((compression_threshold >= 0) AND (compression_threshold <= 100))),
+    CONSTRAINT chat_model_configs_context_limit_check CHECK ((context_limit > 0))
+);
+
+CREATE TABLE chat_providers (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    provider text NOT NULL,
+    display_name text DEFAULT ''::text NOT NULL,
+    api_key text DEFAULT ''::text NOT NULL,
+    api_key_key_id text,
+    created_by uuid,
+    enabled boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    base_url text DEFAULT ''::text NOT NULL,
+    CONSTRAINT chat_providers_provider_check CHECK ((provider = ANY (ARRAY['anthropic'::text, 'azure'::text, 'bedrock'::text, 'google'::text, 'openai'::text, 'openai-compat'::text, 'openrouter'::text, 'vercel'::text])))
+);
+
+COMMENT ON COLUMN chat_providers.api_key_key_id IS 'The ID of the key used to encrypt the provider API key. If this is NULL, the API key is not encrypted';
+
+CREATE TABLE chat_queued_messages (
+    id bigint NOT NULL,
+    chat_id uuid NOT NULL,
+    content jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE chat_queued_messages_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE chat_queued_messages_id_seq OWNED BY chat_queued_messages.id;
+
+CREATE TABLE chats (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    owner_id uuid NOT NULL,
+    workspace_id uuid,
+    title text DEFAULT 'New Chat'::text NOT NULL,
+    status chat_status DEFAULT 'waiting'::chat_status NOT NULL,
+    worker_id uuid,
+    started_at timestamp with time zone,
+    heartbeat_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    parent_chat_id uuid,
+    root_chat_id uuid,
+    last_model_config_id uuid NOT NULL,
+    archived boolean DEFAULT false NOT NULL,
+    last_error text,
+    mode chat_mode
+);
 
 CREATE TABLE connection_logs (
     id uuid NOT NULL,
@@ -1314,7 +1493,10 @@ CREATE TABLE users (
     hashed_one_time_passcode bytea,
     one_time_passcode_expires_at timestamp with time zone,
     is_system boolean DEFAULT false NOT NULL,
+    is_service_account boolean DEFAULT false NOT NULL,
     CONSTRAINT one_time_passcode_set CHECK ((((hashed_one_time_passcode IS NULL) AND (one_time_passcode_expires_at IS NULL)) OR ((hashed_one_time_passcode IS NOT NULL) AND (one_time_passcode_expires_at IS NOT NULL)))),
+    CONSTRAINT users_email_not_empty CHECK (((is_service_account = true) = (email = ''::text))),
+    CONSTRAINT users_service_account_login_type CHECK (((is_service_account = false) OR (login_type = 'none'::login_type))),
     CONSTRAINT users_username_min_length CHECK ((length(username) >= 1))
 );
 
@@ -1329,6 +1511,8 @@ COMMENT ON COLUMN users.hashed_one_time_passcode IS 'A hash of the one-time-pass
 COMMENT ON COLUMN users.one_time_passcode_expires_at IS 'The time when the one-time-passcode expires.';
 
 COMMENT ON COLUMN users.is_system IS 'Determines if a user is a system user, and therefore cannot login or perform normal actions';
+
+COMMENT ON COLUMN users.is_service_account IS 'Determines if a user is an admin-managed account that cannot login';
 
 CREATE VIEW group_members_expanded AS
  WITH all_members AS (
@@ -1470,7 +1654,9 @@ CREATE TABLE oauth2_provider_app_codes (
     app_id uuid NOT NULL,
     resource_uri text,
     code_challenge text,
-    code_challenge_method text
+    code_challenge_method text,
+    state_hash text,
+    redirect_uri text
 );
 
 COMMENT ON TABLE oauth2_provider_app_codes IS 'Codes are meant to be exchanged for access tokens.';
@@ -1480,6 +1666,10 @@ COMMENT ON COLUMN oauth2_provider_app_codes.resource_uri IS 'RFC 8707 resource p
 COMMENT ON COLUMN oauth2_provider_app_codes.code_challenge IS 'PKCE code challenge for public clients';
 
 COMMENT ON COLUMN oauth2_provider_app_codes.code_challenge_method IS 'PKCE challenge method (S256)';
+
+COMMENT ON COLUMN oauth2_provider_app_codes.state_hash IS 'SHA-256 hash of the OAuth2 state parameter, stored to prevent state reflection attacks.';
+
+COMMENT ON COLUMN oauth2_provider_app_codes.redirect_uri IS 'The redirect_uri provided during authorization, to be verified during token exchange (RFC 6749 §4.1.3).';
 
 CREATE TABLE oauth2_provider_app_secrets (
     id uuid NOT NULL,
@@ -1947,6 +2137,31 @@ CREATE TABLE workspace_builds (
     CONSTRAINT workspace_builds_deadline_below_max_deadline CHECK ((((deadline <> '0001-01-01 00:00:00+00'::timestamp with time zone) AND (deadline <= max_deadline)) OR (max_deadline = '0001-01-01 00:00:00+00'::timestamp with time zone)))
 );
 
+CREATE TABLE workspaces (
+    id uuid NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    owner_id uuid NOT NULL,
+    organization_id uuid NOT NULL,
+    template_id uuid NOT NULL,
+    deleted boolean DEFAULT false NOT NULL,
+    name character varying(64) NOT NULL,
+    autostart_schedule text,
+    ttl bigint,
+    last_used_at timestamp with time zone DEFAULT '0001-01-01 00:00:00+00'::timestamp with time zone NOT NULL,
+    dormant_at timestamp with time zone,
+    deleting_at timestamp with time zone,
+    automatic_updates automatic_updates DEFAULT 'never'::automatic_updates NOT NULL,
+    favorite boolean DEFAULT false NOT NULL,
+    next_start_at timestamp with time zone,
+    group_acl jsonb DEFAULT '{}'::jsonb NOT NULL,
+    user_acl jsonb DEFAULT '{}'::jsonb NOT NULL,
+    CONSTRAINT group_acl_is_object CHECK ((jsonb_typeof(group_acl) = 'object'::text)),
+    CONSTRAINT user_acl_is_object CHECK ((jsonb_typeof(user_acl) = 'object'::text))
+);
+
+COMMENT ON COLUMN workspaces.favorite IS 'Favorite is true if the workspace owner has favorited the workspace.';
+
 CREATE VIEW tasks_with_status AS
  SELECT tasks.id,
     tasks.organization_id,
@@ -1959,6 +2174,8 @@ CREATE VIEW tasks_with_status AS
     tasks.created_at,
     tasks.deleted_at,
     tasks.display_name,
+    COALESCE(workspaces.group_acl, '{}'::jsonb) AS workspace_group_acl,
+    COALESCE(workspaces.user_acl, '{}'::jsonb) AS workspace_user_acl,
         CASE
             WHEN (tasks.workspace_id IS NULL) THEN 'pending'::task_status
             WHEN (build_status.status <> 'active'::task_status) THEN build_status.status
@@ -1974,7 +2191,8 @@ CREATE VIEW tasks_with_status AS
     task_owner.owner_username,
     task_owner.owner_name,
     task_owner.owner_avatar_url
-   FROM ((((((((tasks
+   FROM (((((((((tasks
+     LEFT JOIN workspaces ON ((workspaces.id = tasks.workspace_id)))
      CROSS JOIN LATERAL ( SELECT vu.username AS owner_username,
             vu.name AS owner_name,
             vu.avatar_url AS owner_avatar_url
@@ -2701,7 +2919,6 @@ CREATE VIEW workspace_build_with_user AS
     workspace_builds.build_number,
     workspace_builds.transition,
     workspace_builds.initiator_id,
-    workspace_builds.provisioner_state,
     workspace_builds.job_id,
     workspace_builds.deadline,
     workspace_builds.reason,
@@ -2717,31 +2934,6 @@ CREATE VIEW workspace_build_with_user AS
      LEFT JOIN visible_users ON ((workspace_builds.initiator_id = visible_users.id)));
 
 COMMENT ON VIEW workspace_build_with_user IS 'Joins in the username + avatar url of the initiated by user.';
-
-CREATE TABLE workspaces (
-    id uuid NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    owner_id uuid NOT NULL,
-    organization_id uuid NOT NULL,
-    template_id uuid NOT NULL,
-    deleted boolean DEFAULT false NOT NULL,
-    name character varying(64) NOT NULL,
-    autostart_schedule text,
-    ttl bigint,
-    last_used_at timestamp with time zone DEFAULT '0001-01-01 00:00:00+00'::timestamp with time zone NOT NULL,
-    dormant_at timestamp with time zone,
-    deleting_at timestamp with time zone,
-    automatic_updates automatic_updates DEFAULT 'never'::automatic_updates NOT NULL,
-    favorite boolean DEFAULT false NOT NULL,
-    next_start_at timestamp with time zone,
-    group_acl jsonb DEFAULT '{}'::jsonb NOT NULL,
-    user_acl jsonb DEFAULT '{}'::jsonb NOT NULL,
-    CONSTRAINT group_acl_is_object CHECK ((jsonb_typeof(group_acl) = 'object'::text)),
-    CONSTRAINT user_acl_is_object CHECK ((jsonb_typeof(user_acl) = 'object'::text))
-);
-
-COMMENT ON COLUMN workspaces.favorite IS 'Favorite is true if the workspace owner has favorited the workspace.';
 
 CREATE VIEW workspace_latest_builds AS
  SELECT latest_build.id,
@@ -2945,6 +3137,10 @@ CREATE VIEW workspaces_expanded AS
 
 COMMENT ON VIEW workspaces_expanded IS 'Joins in the display name information such as username, avatar, and organization name.';
 
+ALTER TABLE ONLY chat_messages ALTER COLUMN id SET DEFAULT nextval('chat_messages_id_seq'::regclass);
+
+ALTER TABLE ONLY chat_queued_messages ALTER COLUMN id SET DEFAULT nextval('chat_queued_messages_id_seq'::regclass);
+
 ALTER TABLE ONLY licenses ALTER COLUMN id SET DEFAULT nextval('licenses_id_seq'::regclass);
 
 ALTER TABLE ONLY provisioner_job_logs ALTER COLUMN id SET DEFAULT nextval('provisioner_job_logs_id_seq'::regclass);
@@ -2980,6 +3176,30 @@ ALTER TABLE ONLY audit_logs
 
 ALTER TABLE ONLY boundary_usage_stats
     ADD CONSTRAINT boundary_usage_stats_pkey PRIMARY KEY (replica_id);
+
+ALTER TABLE ONLY chat_diff_statuses
+    ADD CONSTRAINT chat_diff_statuses_pkey PRIMARY KEY (chat_id);
+
+ALTER TABLE ONLY chat_files
+    ADD CONSTRAINT chat_files_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY chat_messages
+    ADD CONSTRAINT chat_messages_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY chat_model_configs
+    ADD CONSTRAINT chat_model_configs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY chat_providers
+    ADD CONSTRAINT chat_providers_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY chat_providers
+    ADD CONSTRAINT chat_providers_provider_key UNIQUE (provider);
+
+ALTER TABLE ONLY chat_queued_messages
+    ADD CONSTRAINT chat_queued_messages_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY chats
+    ADD CONSTRAINT chats_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY connection_logs
     ADD CONSTRAINT connection_logs_pkey PRIMARY KEY (id);
@@ -3274,6 +3494,10 @@ CREATE INDEX idx_agent_stats_created_at ON workspace_agent_stats USING btree (cr
 
 CREATE INDEX idx_agent_stats_user_id ON workspace_agent_stats USING btree (user_id);
 
+CREATE INDEX idx_aibridge_interceptions_client ON aibridge_interceptions USING btree (client);
+
+CREATE INDEX idx_aibridge_interceptions_client_session_id ON aibridge_interceptions USING btree (client_session_id) WHERE (client_session_id IS NOT NULL);
+
 CREATE INDEX idx_aibridge_interceptions_initiator_id ON aibridge_interceptions USING btree (initiator_id);
 
 CREATE INDEX idx_aibridge_interceptions_model ON aibridge_interceptions USING btree (model);
@@ -3282,11 +3506,17 @@ CREATE INDEX idx_aibridge_interceptions_provider ON aibridge_interceptions USING
 
 CREATE INDEX idx_aibridge_interceptions_started_id_desc ON aibridge_interceptions USING btree (started_at DESC, id DESC);
 
+CREATE INDEX idx_aibridge_interceptions_thread_parent_id ON aibridge_interceptions USING btree (thread_parent_id);
+
+CREATE INDEX idx_aibridge_interceptions_thread_root_id ON aibridge_interceptions USING btree (thread_root_id);
+
 CREATE INDEX idx_aibridge_token_usages_interception_id ON aibridge_token_usages USING btree (interception_id);
 
 CREATE INDEX idx_aibridge_token_usages_provider_response_id ON aibridge_token_usages USING btree (provider_response_id);
 
 CREATE INDEX idx_aibridge_tool_usages_interception_id ON aibridge_tool_usages USING btree (interception_id);
+
+CREATE INDEX idx_aibridge_tool_usages_provider_tool_call_id ON aibridge_tool_usages USING btree (provider_tool_call_id);
 
 CREATE INDEX idx_aibridge_tool_usagesprovider_response_id ON aibridge_tool_usages USING btree (provider_response_id);
 
@@ -3305,6 +3535,46 @@ CREATE INDEX idx_audit_log_resource_id ON audit_logs USING btree (resource_id);
 CREATE INDEX idx_audit_log_user_id ON audit_logs USING btree (user_id);
 
 CREATE INDEX idx_audit_logs_time_desc ON audit_logs USING btree ("time" DESC);
+
+CREATE INDEX idx_chat_diff_statuses_stale_at ON chat_diff_statuses USING btree (stale_at);
+
+CREATE INDEX idx_chat_files_org ON chat_files USING btree (organization_id);
+
+CREATE INDEX idx_chat_files_owner ON chat_files USING btree (owner_id);
+
+CREATE INDEX idx_chat_messages_chat ON chat_messages USING btree (chat_id);
+
+CREATE INDEX idx_chat_messages_chat_created ON chat_messages USING btree (chat_id, created_at);
+
+CREATE INDEX idx_chat_messages_compressed_summary_boundary ON chat_messages USING btree (chat_id, created_at DESC, id DESC) WHERE ((compressed = true) AND (role = 'system'::chat_message_role) AND (visibility = ANY (ARRAY['model'::chat_message_visibility, 'both'::chat_message_visibility])));
+
+CREATE INDEX idx_chat_messages_created_at ON chat_messages USING btree (created_at);
+
+CREATE INDEX idx_chat_model_configs_enabled ON chat_model_configs USING btree (enabled);
+
+CREATE INDEX idx_chat_model_configs_provider ON chat_model_configs USING btree (provider);
+
+CREATE INDEX idx_chat_model_configs_provider_model ON chat_model_configs USING btree (provider, model);
+
+CREATE UNIQUE INDEX idx_chat_model_configs_single_default ON chat_model_configs USING btree ((1)) WHERE ((is_default = true) AND (deleted = false));
+
+CREATE INDEX idx_chat_providers_enabled ON chat_providers USING btree (enabled);
+
+CREATE INDEX idx_chat_queued_messages_chat_id ON chat_queued_messages USING btree (chat_id);
+
+CREATE INDEX idx_chats_last_model_config_id ON chats USING btree (last_model_config_id);
+
+CREATE INDEX idx_chats_owner ON chats USING btree (owner_id);
+
+CREATE INDEX idx_chats_owner_updated_id ON chats USING btree (owner_id, updated_at DESC, id DESC);
+
+CREATE INDEX idx_chats_parent_chat_id ON chats USING btree (parent_chat_id);
+
+CREATE INDEX idx_chats_pending ON chats USING btree (status) WHERE (status = 'pending'::chat_status);
+
+CREATE INDEX idx_chats_root_chat_id ON chats USING btree (root_chat_id);
+
+CREATE INDEX idx_chats_workspace ON chats USING btree (workspace_id);
 
 CREATE INDEX idx_connection_logs_connect_time_desc ON connection_logs USING btree (connect_time DESC);
 
@@ -3360,7 +3630,7 @@ CREATE INDEX idx_user_deleted_deleted_at ON user_deleted USING btree (deleted_at
 
 CREATE INDEX idx_user_status_changes_changed_at ON user_status_changes USING btree (changed_at);
 
-CREATE UNIQUE INDEX idx_users_email ON users USING btree (email) WHERE (deleted = false);
+CREATE UNIQUE INDEX idx_users_email ON users USING btree (email) WHERE ((deleted = false) AND (email <> ''::text));
 
 CREATE UNIQUE INDEX idx_users_username ON users USING btree (username) WHERE (deleted = false);
 
@@ -3410,7 +3680,7 @@ CREATE UNIQUE INDEX user_secrets_user_file_path_idx ON user_secrets USING btree 
 
 CREATE UNIQUE INDEX user_secrets_user_name_idx ON user_secrets USING btree (user_id, name);
 
-CREATE UNIQUE INDEX users_email_lower_idx ON users USING btree (lower(email)) WHERE (deleted = false);
+CREATE UNIQUE INDEX users_email_lower_idx ON users USING btree (lower(email)) WHERE ((deleted = false) AND (email <> ''::text));
 
 CREATE UNIQUE INDEX users_username_lower_idx ON users USING btree (lower(username)) WHERE (deleted = false);
 
@@ -3551,6 +3821,54 @@ ALTER TABLE ONLY aibridge_interceptions
 
 ALTER TABLE ONLY api_keys
     ADD CONSTRAINT api_keys_user_id_uuid_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY chat_diff_statuses
+    ADD CONSTRAINT chat_diff_statuses_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY chat_files
+    ADD CONSTRAINT chat_files_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY chat_files
+    ADD CONSTRAINT chat_files_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY chat_messages
+    ADD CONSTRAINT chat_messages_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY chat_messages
+    ADD CONSTRAINT chat_messages_model_config_id_fkey FOREIGN KEY (model_config_id) REFERENCES chat_model_configs(id);
+
+ALTER TABLE ONLY chat_model_configs
+    ADD CONSTRAINT chat_model_configs_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id);
+
+ALTER TABLE ONLY chat_model_configs
+    ADD CONSTRAINT chat_model_configs_provider_fkey FOREIGN KEY (provider) REFERENCES chat_providers(provider) ON DELETE CASCADE;
+
+ALTER TABLE ONLY chat_model_configs
+    ADD CONSTRAINT chat_model_configs_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id);
+
+ALTER TABLE ONLY chat_providers
+    ADD CONSTRAINT chat_providers_api_key_key_id_fkey FOREIGN KEY (api_key_key_id) REFERENCES dbcrypt_keys(active_key_digest);
+
+ALTER TABLE ONLY chat_providers
+    ADD CONSTRAINT chat_providers_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id);
+
+ALTER TABLE ONLY chat_queued_messages
+    ADD CONSTRAINT chat_queued_messages_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY chats
+    ADD CONSTRAINT chats_last_model_config_id_fkey FOREIGN KEY (last_model_config_id) REFERENCES chat_model_configs(id);
+
+ALTER TABLE ONLY chats
+    ADD CONSTRAINT chats_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY chats
+    ADD CONSTRAINT chats_parent_chat_id_fkey FOREIGN KEY (parent_chat_id) REFERENCES chats(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY chats
+    ADD CONSTRAINT chats_root_chat_id_fkey FOREIGN KEY (root_chat_id) REFERENCES chats(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY chats
+    ADD CONSTRAINT chats_workspace_id_fkey FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY connection_logs
     ADD CONSTRAINT connection_logs_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE;

@@ -2,6 +2,7 @@
 package db2sdk
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -18,6 +19,7 @@ import (
 	"tailscale.com/tailcfg"
 
 	agentproto "github.com/coder/coder/v2/agent/proto"
+	"github.com/coder/coder/v2/coderd/chatd/chatprompt"
 	"github.com/coder/coder/v2/coderd/database"
 	"github.com/coder/coder/v2/coderd/rbac"
 	"github.com/coder/coder/v2/coderd/rbac/policy"
@@ -981,6 +983,9 @@ func AIBridgeInterception(interception database.AIBridgeInterception, initiator 
 	if interception.EndedAt.Valid {
 		intc.EndedAt = &interception.EndedAt.Time
 	}
+	if interception.Client.Valid {
+		intc.Client = &interception.Client.String
+	}
 	return intc
 }
 
@@ -1046,4 +1051,116 @@ func jsonOrEmptyMap(rawMessage pqtype.NullRawMessage) map[string]any {
 		return map[string]any{}
 	}
 	return m
+}
+
+func ChatMessage(m database.ChatMessage) codersdk.ChatMessage {
+	modelConfigID := &m.ModelConfigID.UUID
+	if !m.ModelConfigID.Valid {
+		modelConfigID = nil
+	}
+	createdBy := &m.CreatedBy.UUID
+	if !m.CreatedBy.Valid {
+		createdBy = nil
+	}
+	msg := codersdk.ChatMessage{
+		ID:            m.ID,
+		ChatID:        m.ChatID,
+		CreatedBy:     createdBy,
+		ModelConfigID: modelConfigID,
+		CreatedAt:     m.CreatedAt,
+		Role:          codersdk.ChatMessageRole(m.Role),
+	}
+	if m.Content.Valid {
+		parts, err := chatMessageParts(m)
+		if err == nil {
+			msg.Content = parts
+		}
+	}
+	usage := chatMessageUsage(m)
+	if usage != nil {
+		msg.Usage = usage
+	}
+	return msg
+}
+
+// chatMessageUsage builds a ChatMessageUsage from the database row,
+// returning nil when no token fields are populated.
+func chatMessageUsage(m database.ChatMessage) *codersdk.ChatMessageUsage {
+	inputTokens := nullInt64Ptr(m.InputTokens)
+	outputTokens := nullInt64Ptr(m.OutputTokens)
+	totalTokens := nullInt64Ptr(m.TotalTokens)
+	reasoningTokens := nullInt64Ptr(m.ReasoningTokens)
+	cacheCreationTokens := nullInt64Ptr(m.CacheCreationTokens)
+	cacheReadTokens := nullInt64Ptr(m.CacheReadTokens)
+	contextLimit := nullInt64Ptr(m.ContextLimit)
+
+	if inputTokens == nil && outputTokens == nil && totalTokens == nil &&
+		reasoningTokens == nil && cacheCreationTokens == nil &&
+		cacheReadTokens == nil && contextLimit == nil {
+		return nil
+	}
+
+	return &codersdk.ChatMessageUsage{
+		InputTokens:         inputTokens,
+		OutputTokens:        outputTokens,
+		TotalTokens:         totalTokens,
+		ReasoningTokens:     reasoningTokens,
+		CacheCreationTokens: cacheCreationTokens,
+		CacheReadTokens:     cacheReadTokens,
+		ContextLimit:        contextLimit,
+	}
+}
+
+// ChatQueuedMessage converts a queued message to its SDK representation.
+func ChatQueuedMessage(message database.ChatQueuedMessage) codersdk.ChatQueuedMessage {
+	// Queued messages are always written by current code via
+	// MarshalParts, so they are always current content version.
+	parts, err := chatMessageParts(database.ChatMessage{
+		Role: database.ChatMessageRoleUser,
+		Content: pqtype.NullRawMessage{
+			RawMessage: message.Content,
+			Valid:      len(message.Content) > 0,
+		},
+		ContentVersion: chatprompt.CurrentContentVersion,
+	})
+	if err != nil {
+		parts = nil
+	}
+
+	return codersdk.ChatQueuedMessage{
+		ID:        message.ID,
+		ChatID:    message.ChatID,
+		Content:   parts,
+		CreatedAt: message.CreatedAt,
+	}
+}
+
+// ChatQueuedMessages converts a slice of database queued messages
+// to their SDK representation.
+func ChatQueuedMessages(messages []database.ChatQueuedMessage) []codersdk.ChatQueuedMessage {
+	out := make([]codersdk.ChatQueuedMessage, 0, len(messages))
+	for _, message := range messages {
+		out = append(out, ChatQueuedMessage(message))
+	}
+	return out
+}
+
+func chatMessageParts(m database.ChatMessage) ([]codersdk.ChatMessagePart, error) {
+	parts, err := chatprompt.ParseContent(m)
+	if err != nil {
+		return nil, err
+	}
+	// Strip internal-only fields before API responses.
+	for i := range parts {
+		parts[i].StripInternal()
+	}
+	return parts, nil
+}
+
+func nullInt64Ptr(v sql.NullInt64) *int64 {
+	if !v.Valid {
+		return nil
+	}
+	value := v.Int64
+	return &value
 }

@@ -49,6 +49,7 @@ import (
 	"github.com/coder/coder/v2/coderd/audit"
 	"github.com/coder/coder/v2/coderd/awsidentity"
 	"github.com/coder/coder/v2/coderd/boundaryusage"
+	"github.com/coder/coder/v2/coderd/chatd"
 	"github.com/coder/coder/v2/coderd/connectionlog"
 	"github.com/coder/coder/v2/coderd/cryptokeys"
 	"github.com/coder/coder/v2/coderd/database"
@@ -60,6 +61,7 @@ import (
 	"github.com/coder/coder/v2/coderd/externalauth"
 	"github.com/coder/coder/v2/coderd/files"
 	"github.com/coder/coder/v2/coderd/gitsshkey"
+	"github.com/coder/coder/v2/coderd/gitsync"
 	"github.com/coder/coder/v2/coderd/healthcheck"
 	"github.com/coder/coder/v2/coderd/healthcheck/derphealth"
 	"github.com/coder/coder/v2/coderd/httpapi"
@@ -98,6 +100,7 @@ import (
 	"github.com/coder/coder/v2/provisionersdk"
 	"github.com/coder/coder/v2/site"
 	"github.com/coder/coder/v2/tailnet"
+	"github.com/coder/coder/v2/tailnet/derpmetrics"
 	"github.com/coder/quartz"
 	"github.com/coder/serpent"
 )
@@ -238,6 +241,9 @@ type Options struct {
 	SSHConfig codersdk.SSHConfigResponse
 
 	HTTPClient *http.Client
+	// ChatSubscribeFn provides cross-replica subscription merging.
+	// Set by enterprise for HA deployments. Nil in AGPL single-replica.
+	ChatSubscribeFn chatd.SubscribeFn
 
 	UpdateAgentMetrics func(ctx context.Context, labels prometheusmetrics.AgentMetricLabels, metrics []*agentproto.Stats_Metric)
 	StatsBatcher       workspacestats.Batcher
@@ -336,9 +342,10 @@ func New(options *Options) *API {
 		panic("developer error: options.PrometheusRegistry is nil and not running a unit test")
 	}
 
-	if options.DeploymentValues.DisableOwnerWorkspaceExec {
+	if options.DeploymentValues.DisableOwnerWorkspaceExec || options.DeploymentValues.DisableWorkspaceSharing {
 		rbac.ReloadBuiltinRoles(&rbac.RoleOptions{
-			NoOwnerWorkspaceExec: true,
+			NoOwnerWorkspaceExec: bool(options.DeploymentValues.DisableOwnerWorkspaceExec),
+			NoWorkspaceSharing:   bool(options.DeploymentValues.DisableWorkspaceSharing),
 		})
 	}
 
@@ -595,7 +602,6 @@ func New(options *Options) *API {
 	var buildUsageChecker atomic.Pointer[wsbuilder.UsageChecker]
 	var noopUsageChecker wsbuilder.UsageChecker = wsbuilder.NoopUsageChecker{}
 	buildUsageChecker.Store(&noopUsageChecker)
-
 	api := &API{
 		ctx:          ctx,
 		cancel:       cancel,
@@ -628,7 +634,8 @@ func New(options *Options) *API {
 			options.Database,
 			options.Pubsub,
 		),
-		dbRolluper: options.DatabaseRolluper,
+		dbRolluper:       options.DatabaseRolluper,
+		ProfileCollector: defaultProfileCollector{},
 	}
 	api.WorkspaceAppsProvider = workspaceapps.NewDBTokenProvider(
 		ctx,
@@ -664,6 +671,7 @@ func New(options *Options) *API {
 	api.SiteHandler, err = site.New(&site.Options{
 		CacheDir:          siteCacheDir,
 		Database:          options.Database,
+		Authorizer:        options.Authorizer,
 		SiteFS:            site.FS(),
 		OAuth2Configs:     oauthConfigs,
 		DocsURL:           options.DeploymentValues.DocsURL.String(),
@@ -773,6 +781,34 @@ func New(options *Options) *API {
 		panic("failed to setup server tailnet: " + err.Error())
 	}
 	api.agentProvider = stn
+
+	api.chatDaemon = chatd.New(chatd.Config{
+		Logger:            options.Logger.Named("chats"),
+		Database:          options.Database,
+		ReplicaID:         api.ID,
+		SubscribeFn:       options.ChatSubscribeFn,
+		ProviderAPIKeys:   chatProviderAPIKeysFromDeploymentValues(options.DeploymentValues),
+		AgentConn:         api.agentProvider.AgentConn,
+		CreateWorkspace:   api.chatCreateWorkspace,
+		StartWorkspace:    api.chatStartWorkspace,
+		Pubsub:            options.Pubsub,
+		WebpushDispatcher: options.WebPushDispatcher,
+	})
+	gitSyncLogger := options.Logger.Named("gitsync")
+	refresher := gitsync.NewRefresher(
+		api.resolveGitProvider,
+		api.resolveChatGitAccessToken,
+		gitSyncLogger.Named("refresher"),
+		quartz.NewReal(),
+	)
+	api.gitSyncWorker = gitsync.NewWorker(options.Database,
+		refresher,
+		api.chatDaemon.PublishDiffStatusChange,
+		quartz.NewReal(),
+		gitSyncLogger,
+	)
+	// nolint:gocritic // chat diff worker needs to be able to CRUD chats.
+	go api.gitSyncWorker.Start(dbauthz.AsChatd(api.ctx))
 	if options.DeploymentValues.Prometheus.Enable {
 		options.PrometheusRegistry.MustRegister(stn)
 		api.lifecycleMetrics = agentapi.NewLifecycleMetrics(options.PrometheusRegistry)
@@ -901,17 +937,18 @@ func New(options *Options) *API {
 	apiRateLimiter := httpmw.RateLimit(options.APIRateLimit, time.Minute)
 
 	// Register DERP on expvar HTTP handler, which we serve below in the router, c.f. expvar.Handler()
-	// These are the metrics the DERP server exposes.
-	// TODO: export via prometheus
 	expDERPOnce.Do(func() {
 		// We need to do this via a global Once because expvar registry is global and panics if we
 		// register multiple times.  In production there is only one Coderd and one DERP server per
 		// process, but in testing, we create multiple of both, so the Once protects us from
 		// panicking.
-		if options.DERPServer != nil {
+		if options.DERPServer != nil && expvar.Get("derp") == nil {
 			expvar.Publish("derp", api.DERPServer.ExpVar())
 		}
 	})
+	if options.PrometheusRegistry != nil && options.DERPServer != nil {
+		options.PrometheusRegistry.MustRegister(derpmetrics.NewDERPExpvarCollector(options.DERPServer))
+	}
 	cors := httpmw.Cors(options.DeploymentValues.Dangerous.AllowAllCors.Value())
 	prometheusMW := httpmw.Prometheus(options.PrometheusRegistry)
 
@@ -919,12 +956,23 @@ func New(options *Options) *API {
 		sharedhttpmw.Recover(api.Logger),
 		httpmw.WithProfilingLabels,
 		tracing.StatusWriterMiddleware,
+		options.DeploymentValues.HTTPCookies.Middleware,
 		tracing.Middleware(api.TracerProvider),
 		httpmw.AttachRequestID,
 		httpmw.ExtractRealIP(api.RealIPConfig),
 		loggermw.Logger(api.Logger),
 		singleSlashMW,
 		rolestore.CustomRoleMW,
+		// Validate API key on every request (if present) and store
+		// the result in context. The rate limiter reads this to key
+		// by user ID, and downstream ExtractAPIKeyMW reuses it to
+		// avoid redundant DB lookups. Never rejects requests.
+		httpmw.PrecheckAPIKey(httpmw.ValidateAPIKeyConfig{
+			DB:                          options.Database,
+			OAuth2Configs:               oauthConfigs,
+			DisableSessionExpiryRefresh: options.DeploymentValues.Sessions.DisableExpiryRefresh.Value(),
+			Logger:                      options.Logger,
+		}),
 		httpmw.HTTPRoute, // NB: prometheusMW depends on this middleware.
 		prometheusMW,
 		// Build-Version is helpful for debugging.
@@ -1073,8 +1121,6 @@ func New(options *Options) *API {
 
 		r.NotFound(func(rw http.ResponseWriter, _ *http.Request) { httpapi.RouteNotFound(rw) })
 		r.Use(
-			// Specific routes can specify different limits, but every rate
-			// limit must be configurable by the admin.
 			apiRateLimiter,
 			httpmw.ReportCLITelemetry(api.Logger, options.Telemetry),
 		)
@@ -1103,6 +1149,72 @@ func New(options *Options) *API {
 				})
 			})
 		})
+		r.Route("/chats", func(r chi.Router) {
+			r.Use(
+				apiKeyMiddleware,
+				httpmw.RequireExperimentWithDevBypass(api.Experiments, codersdk.ExperimentAgents),
+			)
+			r.Get("/", api.listChats)
+			r.Post("/", api.postChats)
+			r.Get("/models", api.listChatModels)
+			r.Get("/watch", api.watchChats)
+			r.Route("/cost", func(r chi.Router) {
+				r.Get("/users", api.chatCostUsers)
+				r.Route("/{user}", func(r chi.Router) {
+					r.Use(httpmw.ExtractUserParam(options.Database))
+					r.Get("/summary", api.chatCostSummary)
+				})
+			})
+			r.Route("/files", func(r chi.Router) {
+				r.Use(httpmw.RateLimit(options.FilesRateLimit, time.Minute))
+				r.Post("/", api.postChatFile)
+				r.Get("/{file}", api.chatFileByID)
+			})
+			r.Route("/config", func(r chi.Router) {
+				r.Get("/system-prompt", api.getChatSystemPrompt)
+				r.Put("/system-prompt", api.putChatSystemPrompt)
+				r.Get("/user-prompt", api.getUserChatCustomPrompt)
+				r.Put("/user-prompt", api.putUserChatCustomPrompt)
+			})
+			// TODO(cian): place under /api/experimental/chats/config
+			r.Route("/providers", func(r chi.Router) {
+				r.Get("/", api.listChatProviders)
+				r.Post("/", api.createChatProvider)
+				r.Route("/{providerConfig}", func(r chi.Router) {
+					r.Patch("/", api.updateChatProvider)
+					r.Delete("/", api.deleteChatProvider)
+				})
+			})
+			// TODO(cian): place under /api/experimental/chats/config
+			r.Route("/model-configs", func(r chi.Router) {
+				r.Get("/", api.listChatModelConfigs)
+				r.Post("/", api.createChatModelConfig)
+				r.Route("/{modelConfig}", func(r chi.Router) {
+					r.Patch("/", api.updateChatModelConfig)
+					r.Delete("/", api.deleteChatModelConfig)
+				})
+			})
+			r.Route("/{chat}", func(r chi.Router) {
+				r.Use(httpmw.ExtractChatParam(options.Database))
+				r.Get("/", api.getChat)
+				r.Get("/git/watch", api.watchChatGit)
+				r.Get("/desktop", api.watchChatDesktop)
+				r.Post("/archive", api.archiveChat)
+				r.Post("/unarchive", api.unarchiveChat)
+				r.Get("/messages", api.getChatMessages)
+				r.Post("/messages", api.postChatMessages)
+				r.Patch("/messages/{message}", api.patchChatMessage)
+				r.Get("/stream", api.streamChat)
+				r.Post("/interrupt", api.interruptChat)
+				r.Get("/diff-status", api.getChatDiffStatus)
+				r.Get("/diff", api.getChatDiffContents)
+				r.Route("/queue/{queuedMessage}", func(r chi.Router) {
+					r.Delete("/", api.deleteChatQueuedMessage)
+					r.Post("/promote", api.promoteChatQueuedMessage)
+				})
+			})
+		})
+
 		r.Route("/mcp", func(r chi.Router) {
 			r.Use(
 				apiKeyMiddleware,
@@ -1111,6 +1223,13 @@ func New(options *Options) *API {
 			// MCP HTTP transport endpoint with mandatory authentication
 			r.Mount("/http", api.mcpHTTPHandler())
 		})
+		r.Route("/watch-all-workspacebuilds", func(r chi.Router) {
+			r.Use(
+				apiKeyMiddleware,
+				httpmw.RequireExperiment(api.Experiments, codersdk.ExperimentWorkspaceBuildUpdates),
+			)
+			r.Get("/", api.watchAllWorkspaceBuilds)
+		})
 	})
 
 	r.Route("/api/v2", func(r chi.Router) {
@@ -1118,8 +1237,6 @@ func New(options *Options) *API {
 
 		r.NotFound(func(rw http.ResponseWriter, _ *http.Request) { httpapi.RouteNotFound(rw) })
 		r.Use(
-			// Specific routes can specify different limits, but every rate
-			// limit must be configurable by the admin.
 			apiRateLimiter,
 			httpmw.ReportCLITelemetry(api.Logger, options.Telemetry),
 		)
@@ -1251,7 +1368,10 @@ func New(options *Options) *API {
 							r.Get("/", api.organizationMember)
 							r.Delete("/", api.deleteOrganizationMember)
 							r.Put("/roles", api.putMemberRoles)
-							r.Post("/workspaces", api.postWorkspacesByOrganization)
+							r.Route("/workspaces", func(r chi.Router) {
+								r.Post("/", api.postWorkspacesByOrganization)
+								r.Get("/available-users", api.workspaceAvailableUsers)
+							})
 						})
 					})
 				})
@@ -1397,6 +1517,7 @@ func New(options *Options) *API {
 						r.Put("/appearance", api.putUserAppearanceSettings)
 						r.Get("/preferences", api.userPreferenceSettings)
 						r.Put("/preferences", api.putUserPreferenceSettings)
+
 						r.Route("/password", func(r chi.Router) {
 							r.Use(httpmw.RateLimit(options.LoginRateLimit, time.Minute))
 							r.Put("/", api.putUserPassword)
@@ -1418,6 +1539,7 @@ func New(options *Options) *API {
 							r.Route("/{keyid}", func(r chi.Router) {
 								r.Get("/", api.apiKeyByID)
 								r.Delete("/", api.deleteAPIKey)
+								r.Put("/expire", api.expireAPIKey)
 							})
 						})
 
@@ -1435,6 +1557,7 @@ func New(options *Options) *API {
 							})
 						})
 						r.Route("/webpush", func(r chi.Router) {
+							r.Use(httpmw.RequireExperimentWithDevBypass(api.Experiments, codersdk.ExperimentWebPush))
 							r.Post("/subscription", api.postUserWebpushSubscription)
 							r.Delete("/subscription", api.deleteUserWebpushSubscription)
 							r.Post("/test", api.postUserPushNotificationTest)
@@ -1540,10 +1663,6 @@ func New(options *Options) *API {
 				})
 				r.Get("/timings", api.workspaceTimings)
 				r.Route("/acl", func(r chi.Router) {
-					r.Use(
-						httpmw.RequireExperiment(api.Experiments, codersdk.ExperimentWorkspaceSharing),
-					)
-
 					r.Get("/", api.workspaceACL)
 					r.Patch("/", api.patchWorkspaceACL)
 					r.Delete("/", api.deleteWorkspaceACL)
@@ -1647,6 +1766,8 @@ func New(options *Options) *API {
 				})
 			}
 			r.Method("GET", "/expvar", expvar.Handler()) // contains DERP metrics as well as cmdline and memstats
+
+			r.Post("/profile", api.debugCollectProfile)
 
 			r.Route("/pprof", func(r chi.Router) {
 				r.Use(func(next http.Handler) http.Handler {
@@ -1752,6 +1873,8 @@ func New(options *Options) *API {
 					r.Patch("/input", api.taskUpdateInput)
 					r.Post("/send", api.taskSend)
 					r.Get("/logs", api.taskLogs)
+					r.Post("/pause", api.pauseTask)
+					r.Post("/resume", api.resumeTask)
 				})
 			})
 		})
@@ -1792,6 +1915,14 @@ func New(options *Options) *API {
 		// and continue
 		api.Logger.Error(context.Background(),
 			"parsing additional CSP headers", slog.Error(cspParseErrors))
+	}
+
+	// Add blob: to img-src for chat file attachment previews when
+	// the agents experiment is enabled.
+	if api.Experiments.Enabled(codersdk.ExperimentAgents) {
+		additionalCSPHeaders[httpmw.CSPDirectiveImgSrc] = append(
+			additionalCSPHeaders[httpmw.CSPDirectiveImgSrc], "blob:",
+		)
 	}
 
 	// Add CSP headers to all static assets and pages. CSP headers only affect
@@ -1920,6 +2051,20 @@ type API struct {
 	// dbRolluper rolls up template usage stats from raw agent and app
 	// stats. This is used to provide insights in the WebUI.
 	dbRolluper *dbrollup.Rolluper
+	// chatDaemon handles background processing of pending chats.
+	chatDaemon *chatd.Server
+	// gitSyncWorker refreshes stale chat diff statuses in the
+	// background.
+	gitSyncWorker *gitsync.Worker
+
+	// ProfileCollector abstracts the runtime/pprof and runtime/trace
+	// calls used by the /debug/profile endpoint. Tests override this
+	// with a stub to avoid process-global side-effects.
+	ProfileCollector ProfileCollector
+	// ProfileCollecting is used as a concurrency guard so that only one
+	// profile collection (via /debug/profile) can run at a time. The CPU
+	// profiler is process-global, so concurrent collections would fail.
+	ProfileCollecting atomic.Bool
 }
 
 // Close waits for all WebSocket connections to drain before returning.
@@ -1948,8 +2093,17 @@ func (api *API) Close() error {
 	case <-timer.C:
 		api.Logger.Warn(api.ctx, "websocket shutdown timed out after 10 seconds")
 	}
-
 	api.dbRolluper.Close()
+	// chatDiffWorker is unconditionally initialized in New().
+	select {
+	case <-api.gitSyncWorker.Done():
+	case <-time.After(10 * time.Second):
+		api.Logger.Warn(context.Background(),
+			"chat diff refresh worker did not exit in time")
+	}
+	if err := api.chatDaemon.Close(); err != nil {
+		api.Logger.Warn(api.ctx, "close chat processor", slog.Error(err))
+	}
 	api.metricsCache.Close()
 	if api.updateChecker != nil {
 		api.updateChecker.Close()
